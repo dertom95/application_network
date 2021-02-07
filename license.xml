@@ -1,8 +1,7 @@
 <license>
-Copyright (c) the Contributors as noted in the AUTHORS file 2021.
+Copyright (c) 2021 the Contributors as noted in the AUTHORS file.
 
-This file is part of Service-Broker, an open-source framework for service-brokers
--- See http://service-broker.nourl
+This file is part of application-network, an open-source framework for connecting application and viewers p2p
 
 This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
