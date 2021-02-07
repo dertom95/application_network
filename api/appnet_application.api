@@ -1,0 +1,32 @@
+<class name = "appnet_application" state = "stable">
+     <constructor>
+        Appnet-Application
+    </constructor>
+
+    <destructor/>
+
+    <method name = "add_view">
+        add application view ( appnet needs to be set as application-type )
+        <argument name = "view" type = "string"/>
+        <return type = "boolean" />
+    </method>
+
+    <method name = "get_view_list">
+        get zlist of all views
+        
+        <return type = "zlist"/>
+    </method>
+
+    <method name = "add_action">
+        add application action ( appnet needs to be set as application-type )
+        <argument name = "action" type = "string"/>
+        <return type = "boolean" />
+    </method>
+
+    <method name = "get_action_list">
+        get zlist of all actions
+        
+        <return type = "zlist"/>
+    </method>
+
+ </class>
