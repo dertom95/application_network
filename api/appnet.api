@@ -1,0 +1,14 @@
+<class name = "appnet">
+ 
+    <!-- Constructor is optional; default one has no arguments -->
+    <constructor>
+        Appnet
+        <argument name = "node_name" type = "string" />
+    </constructor>
+
+    <method name = "uuid">
+        Return our node UUID string, after successful initialization
+        <return type = "string" />
+    </method>     
+
+ </class>

@@ -1,0 +1,35 @@
+<project
+    name = "application_network"
+    description = "A network for sharing data and actions in a network"
+    script = "zproject.gsl"
+    license = "MPLv2"
+    check_license_years = "0"
+    email = "thomas.trocha@gmail.com"
+    url = "https://thomas.trocha.com"
+    repository = "https://github.com/dertom/applcation-network"
+    unique_class_name = "0"
+    headerext = "h"
+    >
+
+    <include filename = "license.xml" />
+
+    <version major = "0" minor = "0" patch = "0" />
+
+    <!-- <use project="libzmq"/> -->
+    
+    <use project = "zyre"/>
+
+
+    <!-- <use project = "czmq"/> -->
+g
+    <class name = "appnet"/>
+
+    <!-- <class name = "service_broker"/> -->
+    <!-- <class name = "fortuna"/> -->
+
+    <main name = "test_appnet" />
+
+    <!-- <constant name = "ZRE_DISCOVERY_PORT" value = "5670" state = "stable">IANA-assigned UDP port for ZRE</constant>
+    <constant name = "REAP_INTERVAL" value = "1000" private = "1" >Once per second</constant>
+    <constant name = "ZAP_DOMAIN_DEFAULT" value = "global" state = "draft" type = "string">Default ZAP domain (auth)</constant> -->
+</project>
