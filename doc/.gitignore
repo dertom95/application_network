@@ -13,6 +13,8 @@
 # Ignore the source doc texts generated from program sources
 appnet.txt
 appnet.doc
+appnet_application.txt
+appnet_application.doc
 test_appnet.txt
 test_appnet.doc
 

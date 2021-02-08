@@ -31,10 +31,9 @@ typedef struct {
 
 static test_item_t
 all_tests [] = {
-#ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
-// Tests for draft public classes:
-    { "appnet", appnet_test, false, true, NULL },
-#endif // APPLICATION_NETWORK_BUILD_DRAFT_API
+// Tests for stable public classes:
+    { "appnet", appnet_test, true, true, NULL },
+    { "appnet_application", appnet_application_test, true, true, NULL },
     {NULL, NULL, 0, 0, NULL}          //  Sentinel
 };
 

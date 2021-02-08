@@ -22,37 +22,18 @@
 //  Set up environment for the application
 
 //  External dependencies
+#include <czmq.h>
 #include <zyre.h>
 
 //  APPLICATION_NETWORK version macros for compile-time API detection
 #define APPLICATION_NETWORK_VERSION_MAJOR 0
 #define APPLICATION_NETWORK_VERSION_MINOR 0
-#define APPLICATION_NETWORK_VERSION_PATCH 0
+#define APPLICATION_NETWORK_VERSION_PATCH 1
 
 #define APPLICATION_NETWORK_MAKE_VERSION(major, minor, patch) \
     ((major) * 10000 + (minor) * 100 + (patch))
 #define APPLICATION_NETWORK_VERSION \
     APPLICATION_NETWORK_MAKE_VERSION(APPLICATION_NETWORK_VERSION_MAJOR, APPLICATION_NETWORK_VERSION_MINOR, APPLICATION_NETWORK_VERSION_PATCH)
-
-// czmq_prelude.h bits
-#if !defined (__WINDOWS__)
-#   if (defined WIN32 || defined _WIN32 || defined WINDOWS || defined _WINDOWS)
-#       undef __WINDOWS__
-#       define __WINDOWS__
-#   endif
-#endif
-
-// Windows MSVS doesn't have stdbool
-#if (defined (_MSC_VER) && !defined (true))
-#   if (!defined (__cplusplus) && (!defined (true)))
-#       define true 1
-#       define false 0
-        typedef char bool;
-#   endif
-#else
-#   include <stdbool.h>
-#endif
-// czmq_prelude.h bits
 
 #if defined (__WINDOWS__)
 #   if defined APPLICATION_NETWORK_STATIC
@@ -82,23 +63,17 @@
 #   endif
 #endif
 
-//  Project has no stable classes, so we build the draft API
-#undef  APPLICATION_NETWORK_BUILD_DRAFT_API
-#define APPLICATION_NETWORK_BUILD_DRAFT_API
-
 //  Opaque class structures to allow forward references
 //  These classes are stable or legacy and built in all releases
-//  Draft classes are by default not built in stable releases
-#ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
 typedef struct _appnet_t appnet_t;
 #define APPNET_T_DEFINED
-#endif // APPLICATION_NETWORK_BUILD_DRAFT_API
+typedef struct _appnet_application_t appnet_application_t;
+#define APPNET_APPLICATION_T_DEFINED
 
 
 //  Public classes, each with its own header file
-#ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
 #include "appnet.h"
-#endif // APPLICATION_NETWORK_BUILD_DRAFT_API
+#include "appnet_application.h"
 
 #ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
 

@@ -29,7 +29,32 @@ set(pkg_config_names_private "")
 ########################################################################
 # options
 ########################################################################
-OPTION (ENABLE_DRAFTS "Build and install draft classes and methods" ON)
+if (NOT CMAKE_BUILD_TYPE)
+    if (EXISTS "${SOURCE_DIR}/.git")
+        set (CMAKE_BUILD_TYPE Debug)
+    else ()
+# http://xit0.org/2013/04/cmake-use-git-branch-and-commit-details-in-project/
+# http://stackoverflow.com/questions/6797395/cmake-execute-process-always-fails-with-no-such-file-or-directory-when-i-cal
+        execute_process(
+            COMMAND git rev-parse --show-toplevel
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            RESULT_VARIABLE git_result
+            OUTPUT_VARIABLE git_root
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        message(STATUS "git workspace root [${git_result}]: ${git_root}")
+        if ( "${git_result}" STREQUAL "0" )
+            set (CMAKE_BUILD_TYPE Debug)
+        else ()
+            set (CMAKE_BUILD_TYPE Release)
+        endif ()
+    endif ()
+endif ()
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    OPTION (ENABLE_DRAFTS "Build and install draft classes and methods" ON)
+else ()
+    OPTION (ENABLE_DRAFTS "Build and install draft classes and methods" OFF)
+endif ()
 IF (ENABLE_DRAFTS)
     ADD_DEFINITIONS (-DAPPLICATION_NETWORK_BUILD_DRAFT_API)
 ENDIF (ENABLE_DRAFTS)
@@ -154,7 +179,7 @@ ENDIF (zyre_FOUND)
 ########################################################################
 set(APPLICATION_NETWORK_VERSION_MAJOR 0)
 set(APPLICATION_NETWORK_VERSION_MINOR 0)
-set(APPLICATION_NETWORK_VERSION_PATCH 0)
+set(APPLICATION_NETWORK_VERSION_PATCH 1)
 set(APPLICATION_NETWORK_VERSION "${APPLICATION_NETWORK_VERSION_MAJOR}.${APPLICATION_NETWORK_VERSION_MINOR}.${APPLICATION_NETWORK_VERSION_PATCH}")
 message(STATUS "Detected APPLICATION_NETWORK Version - ${APPLICATION_NETWORK_VERSION}")
 
@@ -165,13 +190,9 @@ message(STATUS "Detected APPLICATION_NETWORK Version - ${APPLICATION_NETWORK_VER
 set (application_network_headers
     include/application_network_library.h
     include/application_network.h
+    include/appnet.h
+    include/appnet_application.h
 )
-
-IF (ENABLE_DRAFTS)
-    list(APPEND application_network_headers
-        include/appnet.h
-    )
-ENDIF (ENABLE_DRAFTS)
 
 source_group ("Header Files" FILES ${application_network_headers})
 install(FILES ${application_network_headers} DESTINATION include)
@@ -183,14 +204,9 @@ install(FILES ${application_network_headers} DESTINATION include)
 
 include_directories("${SOURCE_DIR}/src" "${SOURCE_DIR}/include" "${PROJECT_BINARY_DIR}")
 set (application_network_sources
+    src/appnet.c
+    src/appnet_application.c
 )
-
-IF (ENABLE_DRAFTS)
-    list (APPEND application_network_sources
-        src/appnet.c
-    )
-ENDIF (ENABLE_DRAFTS)
-
 IF (ENABLE_DRAFTS)
     list (APPEND application_network_sources
         src/application_network_private_selftest.c
@@ -300,7 +316,7 @@ endif()
 ########################################################################
 # pkgconfig
 ########################################################################
-set (VERSION "0.0.0")
+set (VERSION "0.0.1")
 set (prefix "${CMAKE_INSTALL_PREFIX}")
 set (exec_prefix "\${prefix}")
 set (libdir "\${prefix}/lib${LIB_SUFFIX}")
@@ -419,13 +435,9 @@ if(UNIX)
 endif()
 
 set(TEST_CLASSES
-)
-
-IF (ENABLE_DRAFTS)
-    list (APPEND TEST_CLASSES
     appnet
-    )
-ENDIF (ENABLE_DRAFTS)
+    appnet_application
+)
 
 
 if (NOT TARGET copy-selftest-ro)

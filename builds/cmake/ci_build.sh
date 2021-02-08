@@ -215,8 +215,8 @@ if [ -z "$DO_CLANG_FORMAT_CHECK" -a -f configure.ac ]; then
     $CI_TIME ./autogen.sh
     $CI_TIME ./configure "${CONFIG_OPTS[@]}"
     $CI_TIME make -j5 dist-gzip
-    $CI_TIME tar -xzf application_network-0.0.0.tar.gz
-    cd application_network-0.0.0
+    $CI_TIME tar -xzf application_network-0.0.1.tar.gz
+    cd application_network-0.0.1
     fold_end check.clang_format_check
 fi
 

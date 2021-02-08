@@ -1,4 +1,4 @@
-<class name = "appnet">
+<class name = "appnet" state = "stable">
  
     <!-- Constructor is optional; default one has no arguments -->
     <constructor>
@@ -6,9 +6,32 @@
         <argument name = "node_name" type = "string" />
     </constructor>
 
-    <method name = "uuid">
-        Return our node UUID string, after successful initialization
-        <return type = "string" />
-    </method>     
+    <destructor/>
+
+    <method name="is_application_type">
+        Is this appnet an application?
+        <return type = "boolean"/>
+    </method>
+
+    <method name="set_application_type">
+    Set the current appnet to be an application
+    </method>
+
+    <method name="get_application">
+    Get the application-object
+        <return type = "appnet_application"/>
+    </method>
+
+    <method name="recive_event">
+        debug: print zyre-event
+    </method>
+
+    <method name="start">
+    Start the node
+    </method>
+
+    <method name="stop">
+    Stop the node
+    </method>
 
  </class>

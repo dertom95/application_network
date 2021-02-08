@@ -13,21 +13,25 @@
 
     <include filename = "license.xml" />
 
-    <version major = "0" minor = "0" patch = "0" />
+    <version major = "0" minor = "0" patch = "1" />
 
-    <!-- <use project="libzmq"/> -->
-    
+    <use project = "czmq"/>
     <use project = "zyre"/>
 
 
     <!-- <use project = "czmq"/> -->
 g
     <class name = "appnet"/>
+    <class name = "appnet_application"/>
+
+    <!-- <actor name = "someactor">Actor description</actor> -->
 
     <!-- <class name = "service_broker"/> -->
     <!-- <class name = "fortuna"/> -->
 
     <main name = "test_appnet" />
+
+    <target name = "python" />
 
     <!-- <constant name = "ZRE_DISCOVERY_PORT" value = "5670" state = "stable">IANA-assigned UDP port for ZRE</constant>
     <constant name = "REAP_INTERVAL" value = "1000" private = "1" >Once per second</constant>
