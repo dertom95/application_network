@@ -1,0 +1,23 @@
+<class name = "appnet_client" state = "stable">
+     <constructor>
+        Appnet-Client
+    </constructor>
+
+    <destructor/>
+
+    <method name = "set_name">
+        set client name
+        <argument name = "client_name" type = "string"/>
+    </method>
+
+    <callback_type name = "cb">
+        <argument name = "app_name" type = "string" />
+        <argument name = "views" type = "zlist" />
+        <argument name = "actions" type = "zlist" />
+    </callback_type>
+
+    <method name = "set_on_application_enter">
+        <argument name ="callback" type="appnet_client_cb" callback="1"/>
+    </method>
+
+ </class>
