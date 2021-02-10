@@ -32,6 +32,7 @@ struct _appnet_t
     zyre_t *zyre_node;
 
     appnet_application_t *application_data;
+    appnet_client_t *client_data;
 };
 
 
@@ -85,17 +86,18 @@ void appnet_destroy (appnet_t **self_p)
 }
 
 //  Set the current appnet to be an application
-void appnet_set_application_type (appnet_t *self)
+appnet_application_t* appnet_set_application (appnet_t *self)
 {
     assert( self );
     assert( !self->application_data);
 
     self->application_data = appnet_application_new();
+    return self->application_data;
 }
 
 //  Is this appnet an application?
 bool
-    appnet_is_application_type (appnet_t *self)
+    appnet_is_application (appnet_t *self)
 {
     assert(self);
 
@@ -112,6 +114,33 @@ appnet_application_t*
     return self->application_data;
 }
 
+//  Is this appnet a client?
+bool
+    appnet_is_client (appnet_t *self)
+{
+    assert(self);
+    return self->client_data!=NULL;
+}
+
+//  Set the current appnet to be a client
+appnet_client_t*
+    appnet_set_client (appnet_t *self)
+{
+    assert(self);
+    self->client_data=appnet_client_new();
+    return self->client_data;
+}
+
+//  Get the client-object
+appnet_client_t *
+    appnet_get_client (appnet_t *self)
+{
+    assert(self);
+    assert(self->client_data);
+    return self->client_data;
+}
+
+
 //  Start the node
 void
     appnet_start (appnet_t *self)
@@ -119,31 +148,26 @@ void
     assert(self);
     assert(self->zyre_node);
 
-    if (appnet_is_application_type(self)){
-        zyre_set_header(self->zyre_node,"appnet_is_application", "true");
-
+    if (appnet_is_application(self)){
+        zyre_set_header(self->zyre_node,APPNET_HEADER_IS_APPLICATION, "true");
         appnet_application_t* app = appnet_get_application(self);
-        zlist_t* views = appnet_application_get_view_list(app);
-        char buf[500]={0};
-        for(void* ptr=zlist_first(views);ptr!=NULL;){
-            strcat(buf,(char*)ptr);
-            ptr=zlist_next(views);
-            if(ptr) strcat(buf,",");
-        }
-        zyre_set_header(self->zyre_node,"appnet_application_views",buf);
-
-        zlist_t* actions = appnet_application_get_action_list(app);
-        char buf2[500]={0};
-        for(void* ptr=zlist_first(actions);ptr!=NULL;){
-            strcat(buf2,(char*)ptr);
-            ptr=zlist_next(actions);
-            if(ptr) strcat(buf2,",");
-        }
-        zyre_set_header(self->zyre_node,"appnet_application_actions",buf2);        
-
+        appnet_application_set_name(app,"cc_engine");
+        const char* app_meta_data = appnet_application_to_metadata_json_string(app);
+        zyre_set_header(self->zyre_node,APPNET_HEADER_APPLICATION,app_meta_data);
+        free((void*)app_meta_data);
     } else {
-        zyre_set_header(self->zyre_node,"appnet_is_application", "false");
+        zyre_set_header(self->zyre_node,"", "false");
     }
+
+    if (appnet_is_client(self)){
+        zyre_set_header(self->zyre_node,APPNET_HEADER_IS_CLIENT, "true");
+        appnet_client_t* client = appnet_get_client(self);
+        appnet_client_set_name(client,"cc_client");
+        zyre_set_header(self->zyre_node,"client_header","i'm a client");
+    } else {
+        zyre_set_header(self->zyre_node,APPNET_HEADER_CLIENT, "false");
+    }
+
 
     zyre_start(self->zyre_node);
 }
@@ -157,16 +181,28 @@ void
     zyre_stop(self->zyre_node);
 }
 
+//  Get underlying zyre-node
+zyre_t *
+    appnet_get_zyre_node (appnet_t *self)
+{
+    assert(self);
+    assert(self->zyre_node);
+    return self->zyre_node;
+}
+
 //  debug: print zyre-event
-void
-    appnet_recive_event (appnet_t *self)
+appnet_msg_t *
+    appnet_receive_event(appnet_t *self)
 {
     assert(self);
     assert(self->zyre_node);
     zyre_event_t* evt = zyre_event_new(self->zyre_node);
-    zyre_event_print(evt);
+    appnet_msg_t* msg = appnet_msg_new(evt);
     zyre_event_destroy(&evt);
+    return msg;
 }    
+
+
 
 
 //  --------------------------------------------------------------------------
@@ -194,9 +230,12 @@ void appnet_test (bool verbose)
     //  Simple create/destroy test
     appnet_t *self = appnet_new ("node");
 
-    appnet_set_application_type(self);
+    // set this node to be an application
+    appnet_application_t* appdata = appnet_set_application(self);
 
-    appnet_application_t* appdata = appnet_get_application(self);
+    // set meta
+    assert(appnet_get_application(self)==appdata);
+
     appnet_application_add_view(appdata,"entt.comps");
     appnet_application_add_view(appdata,"entt.comps.transform");
     appnet_application_add_view(appdata,"entt.comps.renderable");
@@ -209,13 +248,15 @@ void appnet_test (bool verbose)
     int count = 10;
 
     while (count--) {
-        zyre_event_t *event = zyre_event_new (self->zyre_node);
-        printf ("events-left:%d", count);
-        zyre_event_print (event);
-        zyre_event_destroy (&event);
+        appnet_msg_t* msg = appnet_receive_event(self);
+
+        char* name = appnet_msg_get_name(msg);
+        printf("type:%d name:%s\n",appnet_msg_get_type(msg),name);
+        free(name);
     }
 
     assert (self);
+    appnet_stop(self);
     appnet_destroy (&self);
     //  @end
     printf ("OK\n");

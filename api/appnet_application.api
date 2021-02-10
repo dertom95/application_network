@@ -5,6 +5,11 @@
 
     <destructor/>
 
+    <method name = "set_name">
+        set application name
+        <argument name = "application_name" type = "string"/>
+    </method>
+
     <method name = "add_view">
         add application view ( appnet needs to be set as application-type )
         <argument name = "view" type = "string"/>
@@ -27,6 +32,11 @@
         get zlist of all actions
         
         <return type = "zlist"/>
+    </method>
+
+    <method name = "to_metadata_json_string">
+        get application meta data a string-json
+        <return type = "string"/>
     </method>
 
  </class>

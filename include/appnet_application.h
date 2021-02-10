@@ -31,6 +31,10 @@ APPLICATION_NETWORK_EXPORT appnet_application_t *
 APPLICATION_NETWORK_EXPORT void
     appnet_application_destroy (appnet_application_t **self_p);
 
+//  set application name
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_set_name (appnet_application_t *self, const char *application_name);
+
 //  add application view ( appnet needs to be set as application-type )
 APPLICATION_NETWORK_EXPORT bool
     appnet_application_add_view (appnet_application_t *self, const char *view);
@@ -46,6 +50,10 @@ APPLICATION_NETWORK_EXPORT bool
 //  get zlist of all actions
 APPLICATION_NETWORK_EXPORT zlist_t *
     appnet_application_get_action_list (appnet_application_t *self);
+
+//  get application meta data a string-json
+APPLICATION_NETWORK_EXPORT const char *
+    appnet_application_to_metadata_json_string (appnet_application_t *self);
 
 //  Self test of this class.
 APPLICATION_NETWORK_EXPORT void

@@ -15,24 +15,38 @@
 
     <version major = "0" minor = "0" patch = "1" />
 
+    <!-- <use project = "zmq"/> -->
     <use project = "czmq"/>
     <use project = "zyre"/>
+    <use project = "cJSON"/>
 
 
     <!-- <use project = "czmq"/> -->
-g
-    <class name = "appnet"/>
-    <class name = "appnet_application"/>
 
-    <!-- <actor name = "someactor">Actor description</actor> -->
+    <class name = "appnet" />
+    <class name = "appnet_application"/>
+    <class name = "appnet_client"/>
+    <class name = "appnet_msg"/>
+
+    <!-- <actor name = "appnet_actor">The appnet-actor</actor> -->
 
     <!-- <class name = "service_broker"/> -->
     <!-- <class name = "fortuna"/> -->
 
-    <main name = "test_appnet" />
+    <!-- <model name = "appnet_msg" script = "zproto_codec_c.gsl" /> -->
 
-    <target name = "python" />
+    <main name = "test_appnet_client" />
 
+    <!-- <target name = "python" /> -->
+    <!-- <target name="docker"/> -->
+
+    <constant name = "APPNET_HEADER_IS_CLIENT" value = "appnet_is_client" state = "stable" type = "string">appnet client header</constant>
+    <constant name = "APPNET_HEADER_CLIENT" value = "client_header" state = "stable" type = "string">appnet client header</constant>
+    <constant name = "APPNET_HEADER_IS_APPLICATION" value = "appnet_is_application" state = "stable" type = "string">appnet application header</constant>
+    <constant name = "APPNET_HEADER_APPLICATION" value = "application_header" state = "stable" type = "string">appnet application header</constant>
+
+    <constant name = "APPNET_TYPE_APPLICATION" value="1" state="stable">application type</constant>
+    <constant name = "APPNET_TYPE_CLIENT" value="2"  state="stable">client type</constant>
     <!-- <constant name = "ZRE_DISCOVERY_PORT" value = "5670" state = "stable">IANA-assigned UDP port for ZRE</constant>
     <constant name = "REAP_INTERVAL" value = "1000" private = "1" >Once per second</constant>
     <constant name = "ZAP_DOMAIN_DEFAULT" value = "global" state = "draft" type = "string">Default ZAP domain (auth)</constant> -->

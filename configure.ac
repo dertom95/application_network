@@ -411,6 +411,90 @@ dnl END of PKG_CHECK_MODULES and/or direct tests for libzyre
 dnl END of enabled attempts to search for libzyre
 
 
+was_cjson_check_lib_detected=no
+
+search_cjson="yes"
+
+AC_ARG_WITH([cjson],
+    [
+        AS_HELP_STRING([--with-cjson],
+        [yes or no. Optionally specify cjson prefix (directory where its include/ and lib/ are located), but that is only used if pkgconfig metadata is not found first])
+    ],
+    [
+        search_cjson="yes"
+    ],
+    [
+        search_cjson="yes"
+    ])
+AS_CASE([x"${with_cjson}"],
+    [xyes], [search_cjson="yes"],
+    [xno],  [search_cjson="no"])
+
+dnl We do not abort right now, because the maintainer/developer may have
+dnl something particular in mind, e.g. to build just parts of a project.
+AS_IF([test x"${search_cjson}" = xno],
+    [AC_MSG_WARN([Required dependency on cjson was explicitly disabled during configuration by '--with-cjson=no'; subsequent full build of application_network may fail])])
+
+AS_IF([test x"${search_cjson}" = xyes], [
+    # Archive previously detected and supplied flags
+    PRE_SEARCH_CFLAGS="${CFLAGS}"
+    PRE_SEARCH_LIBS="${LIBS}"
+
+    found_pkgconfig=""
+    PKG_CHECK_MODULES([cjson], [cjson >= 0.0.0],
+    [
+        was_cjson_check_lib_detected=pkgcfg
+        found_pkgconfig="cjson"
+    ],
+    [
+        AC_MSG_NOTICE([Package cjson not found; falling back to defined compilability tests])
+
+        cjson_synthetic_cflags=""
+        cjson_synthetic_libs="-lcjson"
+
+        if test -n "${with_cjson}" && test x"${with_cjson}" != xyes && test x"${with_cjson}" != xno; then
+            if test -r "${with_cjson}/include/cjson/cJSON.h"; then
+                cjson_synthetic_cflags="-I${with_cjson}/include"
+                cjson_synthetic_libs="-L${with_cjson}/lib -lcjson"
+            else
+            AC_MSG_ERROR([Header file ${with_cjson}/include/cjson/cJSON.h was not found. Please check cjson prefix])
+            fi
+        else
+            AC_CHECK_HEADER([cjson/cJSON.h], [],
+            AC_MSG_ERROR([Header file cjson/cJSON.h was not found in default search paths])
+                )
+        fi
+
+        AC_CHECK_LIB([cjson], [cJSON_Parse],
+            [
+                was_cjson_check_lib_detected=yes
+                PKGCFG_LIBS_PRIVATE="$PKGCFG_LIBS_PRIVATE -lcjson"
+            ],
+            [AC_MSG_ERROR([cannot link with -lcjson, install cjson])])
+    ])
+
+dnl END of PKG_CHECK_MODULES and/or direct tests for cjson
+    AS_CASE(["x${was_cjson_check_lib_detected}"],
+        [xpkgcfg], [
+                PKGCFG_NAMES_PRIVATE="$PKGCFG_NAMES_PRIVATE ${found_pkgconfig}"
+                CFLAGS="${cjson_CFLAGS} ${CFLAGS}"
+                LIBS="${cjson_LIBS} ${LIBS}"
+            ],
+        [xyes], [
+                CFLAGS="${cjson_synthetic_cflags} ${CFLAGS}"
+                LDFLAGS="${cjson_synthetic_libs} ${LDFLAGS}"
+                LIBS="${cjson_synthetic_libs} ${LIBS}"
+
+                AC_SUBST([cjson_CFLAGS],[${cjson_synthetic_cflags}])
+                AC_SUBST([cjson_LIBS],[${cjson_synthetic_libs}])
+            ],
+        [xno], [
+            AC_MSG_ERROR([Cannot find pkg-config metadata for cjson 0.0.0 or higher])
+    ])
+])
+dnl END of enabled attempts to search for cjson
+
+
 CFLAGS="${PREVIOUS_CFLAGS}"
 LIBS="${PREVIOUS_LIBS}"
 
@@ -606,15 +690,15 @@ fi
      AC_MSG_RESULT([$enable_dist_cmakefiles])])
 AM_CONDITIONAL(ENABLE_DIST_CMAKEFILES, test "x$enable_dist_cmakefiles" = "xyes")
 
-# Check for test_appnet intent
-AC_ARG_ENABLE([test_appnet],
-    AS_HELP_STRING([--enable-test_appnet],
-        [Compile and install 'test_appnet' [default=yes]]),
-    [enable_test_appnet=$enableval],
-    [enable_test_appnet=yes])
+# Check for test_appnet_client intent
+AC_ARG_ENABLE([test_appnet_client],
+    AS_HELP_STRING([--enable-test_appnet_client],
+        [Compile and install 'test_appnet_client' [default=yes]]),
+    [enable_test_appnet_client=$enableval],
+    [enable_test_appnet_client=yes])
 
-AM_CONDITIONAL([ENABLE_TEST_APPNET], [test x$enable_test_appnet != xno])
-AM_COND_IF([ENABLE_TEST_APPNET], [AC_MSG_NOTICE([ENABLE_TEST_APPNET defined])])
+AM_CONDITIONAL([ENABLE_TEST_APPNET_CLIENT], [test x$enable_test_appnet_client != xno])
+AM_COND_IF([ENABLE_TEST_APPNET_CLIENT], [AC_MSG_NOTICE([ENABLE_TEST_APPNET_CLIENT defined])])
 
 # Check for application_network_selftest intent
 AC_ARG_ENABLE([application_network_selftest],

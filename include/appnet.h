@@ -33,19 +33,31 @@ APPLICATION_NETWORK_EXPORT void
 
 //  Is this appnet an application?
 APPLICATION_NETWORK_EXPORT bool
-    appnet_is_application_type (appnet_t *self);
+    appnet_is_application (appnet_t *self);
 
 //  Set the current appnet to be an application
-APPLICATION_NETWORK_EXPORT void
-    appnet_set_application_type (appnet_t *self);
+APPLICATION_NETWORK_EXPORT appnet_application_t *
+    appnet_set_application (appnet_t *self);
 
 //  Get the application-object
 APPLICATION_NETWORK_EXPORT appnet_application_t *
     appnet_get_application (appnet_t *self);
 
-//  debug: print zyre-event
-APPLICATION_NETWORK_EXPORT void
-    appnet_recive_event (appnet_t *self);
+//  Is this appnet a client?
+APPLICATION_NETWORK_EXPORT bool
+    appnet_is_client (appnet_t *self);
+
+//  Set the current appnet to be a client
+APPLICATION_NETWORK_EXPORT appnet_client_t *
+    appnet_set_client (appnet_t *self);
+
+//  Get the client-object
+APPLICATION_NETWORK_EXPORT appnet_client_t *
+    appnet_get_client (appnet_t *self);
+
+//
+APPLICATION_NETWORK_EXPORT appnet_msg_t *
+    appnet_receive_event (appnet_t *self);
 
 //  Start the node
 APPLICATION_NETWORK_EXPORT void
@@ -54,6 +66,10 @@ APPLICATION_NETWORK_EXPORT void
 //  Stop the node
 APPLICATION_NETWORK_EXPORT void
     appnet_stop (appnet_t *self);
+
+//  Get underlying zyre-node
+APPLICATION_NETWORK_EXPORT zyre_t *
+    appnet_get_zyre_node (appnet_t *self);
 
 //  Self test of this class.
 APPLICATION_NETWORK_EXPORT void

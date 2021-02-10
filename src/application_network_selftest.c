@@ -34,6 +34,11 @@ all_tests [] = {
 // Tests for stable public classes:
     { "appnet", appnet_test, true, true, NULL },
     { "appnet_application", appnet_application_test, true, true, NULL },
+    { "appnet_client", appnet_client_test, true, true, NULL },
+#ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
+// Tests for draft public classes:
+    { "appnet_msg", appnet_msg_test, false, true, NULL },
+#endif // APPLICATION_NETWORK_BUILD_DRAFT_API
     {NULL, NULL, 0, 0, NULL}          //  Sentinel
 };
 

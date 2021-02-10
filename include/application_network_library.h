@@ -24,6 +24,7 @@
 //  External dependencies
 #include <czmq.h>
 #include <zyre.h>
+#include <cjson/cJSON.h>
 
 //  APPLICATION_NETWORK version macros for compile-time API detection
 #define APPLICATION_NETWORK_VERSION_MAJOR 0
@@ -69,11 +70,29 @@ typedef struct _appnet_t appnet_t;
 #define APPNET_T_DEFINED
 typedef struct _appnet_application_t appnet_application_t;
 #define APPNET_APPLICATION_T_DEFINED
+typedef struct _appnet_client_t appnet_client_t;
+#define APPNET_CLIENT_T_DEFINED
+//  Draft classes are by default not built in stable releases
+#ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
+typedef struct _appnet_msg_t appnet_msg_t;
+#define APPNET_MSG_T_DEFINED
+#endif // APPLICATION_NETWORK_BUILD_DRAFT_API
 
+//  Public constants
+#define APPNET_HEADER_IS_CLIENT  "appnet_is_client"  //  appnet client header
+#define APPNET_HEADER_CLIENT  "client_header"  //  appnet client header
+#define APPNET_HEADER_IS_APPLICATION  "appnet_is_application"  //  appnet application header
+#define APPNET_HEADER_APPLICATION  "application_header"  //  appnet application header
+#define APPNET_TYPE_APPLICATION  1             //  application type
+#define APPNET_TYPE_CLIENT  2                  //  client type
 
 //  Public classes, each with its own header file
 #include "appnet.h"
 #include "appnet_application.h"
+#include "appnet_client.h"
+#ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
+#include "appnet_msg.h"
+#endif // APPLICATION_NETWORK_BUILD_DRAFT_API
 
 #ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
 

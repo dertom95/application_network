@@ -8,13 +8,14 @@
 
     <destructor/>
 
-    <method name="is_application_type">
+    <method name="is_application">
         Is this appnet an application?
         <return type = "boolean"/>
     </method>
 
-    <method name="set_application_type">
+    <method name="set_application">
     Set the current appnet to be an application
+        <return type = "appnet_application"/>
     </method>
 
     <method name="get_application">
@@ -22,8 +23,23 @@
         <return type = "appnet_application"/>
     </method>
 
-    <method name="recive_event">
-        debug: print zyre-event
+    <method name="is_client">
+        Is this appnet a client?
+        <return type = "boolean"/>
+    </method>
+
+    <method name="set_client">
+    Set the current appnet to be a client
+        <return type = "appnet_client"/>
+    </method>
+
+    <method name="get_client">
+    Get the client-object
+        <return type = "appnet_client"/>
+    </method>    
+
+    <method name="receive_event">
+        <return type = "appnet_msg"/>
     </method>
 
     <method name="start">
@@ -32,6 +48,11 @@
 
     <method name="stop">
     Stop the node
+    </method>
+
+    <method name="get_zyre_node">
+    Get underlying zyre-node
+        <return type="zyre"/>
     </method>
 
  </class>

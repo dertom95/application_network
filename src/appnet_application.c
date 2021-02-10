@@ -27,6 +27,7 @@
 struct _appnet_application_t {
     zlist_t* views;
     zlist_t* actions;
+    char* name;
 };
 
 
@@ -58,12 +59,24 @@ appnet_application_destroy (appnet_application_t **self_p)
 
         zlist_destroy(&self->views);
         zlist_destroy(&self->actions);
+        if (self->name) {
+            free(self->name);
+            self->name=NULL;
+        }
 
         //  Free class properties here
         //  Free object itself
         free (self);
         *self_p = NULL;
     }
+}
+
+//  set application name
+void
+    appnet_application_set_name (appnet_application_t *self, const char *application_name)
+{
+    self->name = malloc(sizeof(char)*strlen(application_name)+1);
+    strcpy(self->name,application_name);
 }
 
 //  add application view ( appnet needs to be set as application-type )
@@ -102,6 +115,35 @@ zlist_t *
     assert(self);
     assert(self->actions);
     return self->actions;
+}
+
+//  get application meta data a string-json
+const char *
+    appnet_application_to_metadata_json_string (appnet_application_t *self)
+{
+    assert(self);
+    cJSON* json_meta_header = cJSON_CreateObject();
+    cJSON_AddStringToObject(json_meta_header,"name",self->name);
+
+    cJSON* json_views = cJSON_CreateArray();
+    for(void* ptr=zlist_first(self->views);ptr!=NULL;){
+        cJSON* json_view = cJSON_CreateString((char*)ptr);            
+        cJSON_AddItemToArray(json_views,json_view);
+        ptr=zlist_next(self->views);
+    }
+    cJSON_AddItemToObject(json_meta_header,"views",json_views);
+    
+    // zyre_set_header(self->zyre_node,"appnet_application_views",buf);
+    cJSON* json_actions = cJSON_CreateArray();
+    for(void* ptr=zlist_first(self->actions);ptr!=NULL;){
+        cJSON* json_action = cJSON_CreateString((char*)ptr);
+        cJSON_AddItemToArray(json_actions,json_action);
+        ptr=zlist_next(self->actions);
+    }
+    cJSON_AddItemToObject(json_meta_header,"actions",json_actions);
+    const char* json_string = cJSON_PrintUnformatted(json_meta_header);
+    cJSON_Delete(json_meta_header);
+    return json_string;
 }
 
 //  --------------------------------------------------------------------------

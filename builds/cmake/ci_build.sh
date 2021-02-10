@@ -205,6 +205,48 @@ if ! ((command -v dpkg >/dev/null 2>&1 && dpkg -s libzyre-dev >/dev/null 2>&1) |
 fi
 fold_end dependency.zyre
 
+# Start of recipe for dependency: cjson
+fold_start dependency.cjson "Install dependency cjson"
+if ! ((command -v dpkg >/dev/null 2>&1 && dpkg -s libcjson-dev >/dev/null 2>&1) || \
+      (command -v brew >/dev/null 2>&1 && brew ls --versions cjson >/dev/null 2>&1)); then
+    BASE_PWD=${PWD}
+    cd tmp-deps
+    $CI_TIME git clone --quiet --depth 1 https://github.com/davegamble/cjson cjson
+    cd cjson
+    CCACHE_BASEDIR=${PWD}
+    export CCACHE_BASEDIR
+    git --no-pager log --oneline -n1
+    if [ -e autogen.sh ]; then
+        $CI_TIME ./autogen.sh 2> /dev/null
+    fi
+    if [ -e buildconf ]; then
+        $CI_TIME ./buildconf 2> /dev/null
+    fi
+    if [ ! -e autogen.sh ] && [ ! -e buildconf ] && [ ! -e ./configure ] && [ -s ./configure.ac ]; then
+        $CI_TIME libtoolize --copy --force && \
+        $CI_TIME aclocal -I . && \
+        $CI_TIME autoheader && \
+        $CI_TIME automake --add-missing --copy && \
+        $CI_TIME autoconf || \
+        $CI_TIME autoreconf -fiv
+    fi
+    if [ -e ./configure ]; then
+        $CI_TIME ./configure "${CONFIG_OPTS[@]}"
+    else
+        mkdir build
+        cd build
+        $CI_TIME cmake .. -DCMAKE_INSTALL_PREFIX=$BUILD_PREFIX -DCMAKE_PREFIX_PATH=$BUILD_PREFIX
+    fi
+    if [ -e ./configure ]; then
+        $CI_TIME make -j4
+        $CI_TIME make install
+    else
+        $CI_TIME cmake --build . --config Release --target install
+    fi
+    cd "${BASE_PWD}"
+fi
+fold_end dependency.cjson
+
 
 cd ../..
 

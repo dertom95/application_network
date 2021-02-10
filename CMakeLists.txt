@@ -175,6 +175,23 @@ ELSE (zyre_FOUND)
 ENDIF (zyre_FOUND)
 
 ########################################################################
+# CJSON dependency
+########################################################################
+find_package(cjson REQUIRED)
+IF (cjson_FOUND)
+    include_directories(${cjson_INCLUDE_DIRS})
+    list(APPEND MORE_LIBRARIES ${cjson_LIBRARIES})
+  IF (PC_CJSON_FOUND)
+      set(pkg_config_names_private "${pkg_config_names_private} cjson")
+      list(APPEND OPTIONAL_LIBRARIES_STATIC ${PC_CJSON_STATIC_LDFLAGS})
+  ELSE (PC_CJSON_FOUND)
+      set(pkg_config_libs_private "${pkg_config_libs_private} -lcjson")
+  ENDIF (PC_CJSON_FOUND)
+ELSE (cjson_FOUND)
+    message( FATAL_ERROR "cjson not found." )
+ENDIF (cjson_FOUND)
+
+########################################################################
 # version
 ########################################################################
 set(APPLICATION_NETWORK_VERSION_MAJOR 0)
@@ -192,7 +209,14 @@ set (application_network_headers
     include/application_network.h
     include/appnet.h
     include/appnet_application.h
+    include/appnet_client.h
 )
+
+IF (ENABLE_DRAFTS)
+    list(APPEND application_network_headers
+        include/appnet_msg.h
+    )
+ENDIF (ENABLE_DRAFTS)
 
 source_group ("Header Files" FILES ${application_network_headers})
 install(FILES ${application_network_headers} DESTINATION include)
@@ -206,7 +230,15 @@ include_directories("${SOURCE_DIR}/src" "${SOURCE_DIR}/include" "${PROJECT_BINAR
 set (application_network_sources
     src/appnet.c
     src/appnet_application.c
+    src/appnet_client.c
 )
+
+IF (ENABLE_DRAFTS)
+    list (APPEND application_network_sources
+        src/appnet_msg.c
+    )
+ENDIF (ENABLE_DRAFTS)
+
 IF (ENABLE_DRAFTS)
     list (APPEND application_network_sources
         src/application_network_private_selftest.c
@@ -368,31 +400,33 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/application_networkConfig.cmake
 # executables
 ########################################################################
 add_executable(
-    test_appnet
-    "${SOURCE_DIR}/src/test_appnet.c"
+    test_appnet_client
+    "${SOURCE_DIR}/src/test_appnet_client.c"
 )
 if (TARGET application_network)
 target_link_libraries(
-    test_appnet
+    test_appnet_client
     application_network
     ${LIBZMQ_LIBRARIES}
     ${CZMQ_LIBRARIES}
     ${ZYRE_LIBRARIES}
+    ${CJSON_LIBRARIES}
     ${OPTIONAL_LIBRARIES}
 )
 endif()
 if (NOT TARGET application_network AND TARGET application_network-static)
 target_link_libraries(
-    test_appnet
+    test_appnet_client
     application_network-static
     ${LIBZMQ_LIBRARIES}
     ${CZMQ_LIBRARIES}
     ${ZYRE_LIBRARIES}
+    ${CJSON_LIBRARIES}
     ${OPTIONAL_LIBRARIES}
     ${OPTIONAL_LIBRARIES_STATIC}
 )
 endif()
-install(TARGETS test_appnet
+install(TARGETS test_appnet_client
     RUNTIME DESTINATION bin
 )
 add_executable(
@@ -406,6 +440,7 @@ target_link_libraries(
     ${LIBZMQ_LIBRARIES}
     ${CZMQ_LIBRARIES}
     ${ZYRE_LIBRARIES}
+    ${CJSON_LIBRARIES}
     ${OPTIONAL_LIBRARIES}
 )
 endif()
@@ -416,6 +451,7 @@ target_link_libraries(
     ${LIBZMQ_LIBRARIES}
     ${CZMQ_LIBRARIES}
     ${ZYRE_LIBRARIES}
+    ${CJSON_LIBRARIES}
     ${OPTIONAL_LIBRARIES}
     ${OPTIONAL_LIBRARIES_STATIC}
 )
@@ -437,7 +473,14 @@ endif()
 set(TEST_CLASSES
     appnet
     appnet_application
+    appnet_client
 )
+
+IF (ENABLE_DRAFTS)
+    list (APPEND TEST_CLASSES
+    appnet_msg
+    )
+ENDIF (ENABLE_DRAFTS)
 
 
 if (NOT TARGET copy-selftest-ro)
@@ -503,7 +546,7 @@ set(cmake_generated ${PROJECT_BINARY_DIR}/CMakeCache.txt
                     ${PROJECT_BINARY_DIR}/src/libapplication_network.pc
                     ${PROJECT_BINARY_DIR}/src/libapplication_network.so
                     ${PROJECT_BINARY_DIR}/src/application_network_selftest
-                    ${PROJECT_BINARY_DIR}/src/test_appnet
+                    ${PROJECT_BINARY_DIR}/src/test_appnet_client
                     ${PROJECT_BINARY_DIR}/src/application_network_selftest
 )
 

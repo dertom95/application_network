@@ -15,8 +15,12 @@ appnet.txt
 appnet.doc
 appnet_application.txt
 appnet_application.doc
-test_appnet.txt
-test_appnet.doc
+appnet_client.txt
+appnet_client.doc
+appnet_msg.txt
+appnet_msg.doc
+test_appnet_client.txt
+test_appnet_client.doc
 
 # Make sure to track the manually maintained project description
 !*.adoc
