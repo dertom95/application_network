@@ -20,6 +20,14 @@
 
 #include "application_network_classes.h"
 
+void on_app_enter(appnet_application_t* app,void* userdata)
+{
+    appnet_t* self = (appnet_t*)userdata;
+
+    appnet_application_print(app);
+
+}
+
 int main (int argc, char *argv [])
 {
     bool verbose = false;
@@ -47,28 +55,27 @@ int main (int argc, char *argv [])
 
     //  @selftest
     //  Simple create/destroy test
-    appnet_t* node = appnet_new ("node");
-
+    appnet_t* node = appnet_new ("node-client");
+    appnet_set_timeout(node,10.0f);
+    appnet_set_on_application_enter(node,on_app_enter,node);
+    
     // set this node to be an application
     appnet_client_t* client = appnet_set_client(node);
+    appnet_client_set_name(client,"forty-client");
     appnet_start(node);
 
-    zyre_t* zyre = appnet_get_zyre_node(node);
+    //zyre_t* zyre = appnet_get_zyre_node(node);
     sleep(1);
-    zlist_t* peers = zyre_peers(zyre);
-    for (void* peer=zlist_first(peers);peer!=NULL;peer=zlist_next(peers)){
-        zuuid_t* peer = (zuuid_t*)peer;
-        const char* peer_id = zuuid_str(peer);
-        const char* data = zyre_peer_header_value(zyre,peer_id,APPNET_HEADER_IS_APPLICATION);
-        int a=0;
-        free((void*)peer_id);
-        free((void*)peer);
-        free((void*)data);
-    }
-
     int count = 5;
     while (count--){
-        appnet_receive_event(node);
+        appnet_msg_t* msg = appnet_receive_event(node);
+        uint8_t msg_type = appnet_msg_get_type(msg);
+    }
+
+    printf("applications:\n");
+    zlist_t* app_keys = appnet_get_remote_application_names(node);
+    for (void* ptr=zlist_first(app_keys);ptr!=NULL;ptr=zlist_next(app_keys)){
+        printf("\t%s\n",(char*)ptr);
     }
 
     appnet_stop(node);

@@ -25,6 +25,7 @@
 struct _appnet_msg_t {
     byte type;
     char* name;
+    char* peer_id;
     zlist_t* views;
     zlist_t* actions;
 };
@@ -61,63 +62,82 @@ appnet_msg_destroy (appnet_msg_t **self_p)
         *self_p = NULL;
     }
 }
+
+void appnet_msg_parse_event_enter(appnet_msg_t* self, zyre_event_t *evt)
+{
+    const char* is_application = zyre_event_header(evt,APPNET_HEADER_IS_APPLICATION);
+    if (is_application){
+
+        self->type = APPNET_TYPE_APPLICATION_ENTER;
+        const char* app_meta = zyre_event_header(evt,APPNET_HEADER_APPLICATION);
+        cJSON* json = cJSON_Parse(app_meta);
+        cJSON* name = cJSON_GetObjectItemCaseSensitive(json,"name");
+        
+        if (cJSON_IsString(name) && name->valuestring){
+            self->name = malloc (sizeof (char) * strlen (name->valuestring) + 1);
+            strcpy (self->name, name->valuestring);
+        }
+
+        const cJSON* json_views = cJSON_GetObjectItemCaseSensitive(json,"views");
+        if (cJSON_IsArray(json_views)){
+            int size = cJSON_GetArraySize(json_views);
+            if (size>0){
+                self->views = zlist_new();
+                zlist_autofree(self->views);
+                for (int i=0;i<size;i++){
+                    cJSON* json_view = cJSON_GetArrayItem(json_views,i);
+                    char* view_name = cJSON_GetStringValue(json_view);
+                    zlist_append(self->views,(void*)view_name);
+                }
+            }
+        }
+
+        const cJSON* json_actions = cJSON_GetObjectItemCaseSensitive(json,"actions");
+        if (cJSON_IsArray(json_actions)){
+            int size = cJSON_GetArraySize(json_actions);
+            if (size>0){
+                self->actions = zlist_new();
+                zlist_autofree(self->actions);
+                for (int i=0;i<size;i++){
+                    cJSON* json_action = cJSON_GetArrayItem(json_actions,i);
+                    char* action_name = cJSON_GetStringValue(json_action);
+                    zlist_append(self->actions,(void*)action_name);
+                }
+            }
+        }
+
+        cJSON_Delete(json);
+    }
+
+    const char* is_client = zyre_event_header(evt,APPNET_HEADER_IS_CLIENT);
+    if (is_client){
+        self->type = APPNET_TYPE_CLIENT_ENTER;
+        const char* app_meta = zyre_event_header(evt,APPNET_HEADER_APPLICATION);
+        cJSON* json = cJSON_Parse(app_meta);
+        cJSON* name = cJSON_GetObjectItemCaseSensitive(json,"name");   
+        cJSON_free(json);         
+    }     
+}
+
 //  Parse zyre parse zyre event
 void
     appnet_msg_parse_zyre_event (appnet_msg_t *self, zyre_event_t *evt)
 {
     const char* evt_type = zyre_event_type(evt);
 
+    STRCPY(self->peer_id,zyre_event_peer_uuid(evt));
+
     if (streq(evt_type,"ENTER")){
-        const char* is_application = zyre_event_header(evt,APPNET_HEADER_IS_APPLICATION);
-        if (is_application){
-
-            self->type = APPNET_TYPE_APPLICATION;
-            const char* app_meta = zyre_event_header(evt,APPNET_HEADER_APPLICATION);
-            cJSON* json = cJSON_Parse(app_meta);
-            cJSON* name = cJSON_GetObjectItemCaseSensitive(json,"name");
-            
-            if (cJSON_IsString(name) && name->valuestring){
-                self->name = malloc (sizeof (char) * strlen (name->valuestring) + 1);
-                strcpy (self->name, name->valuestring);
-            }
-
-            const cJSON* json_views = cJSON_GetObjectItemCaseSensitive(json,"views");
-            if (cJSON_IsArray(json_views)){
-                int size = cJSON_GetArraySize(json_views);
-                if (size>0){
-                    self->views = zlist_new();
-                    for (int i=0;i<size;i++){
-                        cJSON* json_view = cJSON_GetArrayItem(json_views,i);
-                        char* view_name = cJSON_GetStringValue(json_view);
-                        zlist_append(self->views,(void*)view_name);
-                    }
-                }
-            }
-
-            const cJSON* json_actions = cJSON_GetObjectItemCaseSensitive(json,"actions");
-            if (cJSON_IsArray(json_actions)){
-                int size = cJSON_GetArraySize(json_actions);
-                if (size>0){
-                    self->actions = zlist_new();
-                    for (int i=0;i<size;i++){
-                        cJSON* json_action = cJSON_GetArrayItem(json_actions,i);
-                        char* action_name = cJSON_GetStringValue(json_actions);
-                        zlist_append(self->actions,(void*)action_name);
-                    }
-                }
-            }
-
-            cJSON_Delete(json);
-        }
-
-
-        const char* is_client = zyre_event_header(evt,APPNET_HEADER_IS_CLIENT);
-        if (is_client){
-            self->type = APPNET_TYPE_APPLICATION;
-            const char* app_meta = zyre_event_header(evt,APPNET_HEADER_APPLICATION);
-            cJSON* json = cJSON_Parse(app_meta);
-            cJSON* name = cJSON_GetObjectItemCaseSensitive(json,"name");            
-        } 
+        appnet_msg_parse_event_enter(self,evt);
+    }
+    else if (streq(evt_type,"WHISPER")){
+        zmsg_t* incomming = zyre_event_msg(evt);
+        zframe_t* frame = zmsg_pop(incomming);
+        zhash_t* ht = zhash_unpack(frame);
+        zhash_autofree(ht);
+        char* result = (char*)zhash_lookup(ht,"tom");
+        int a=0;
+        zhash_destroy(&ht);
     }
 
     //free((void*)evt_type);
@@ -138,6 +158,14 @@ uint8_t
 {
     assert(self);
     return self->name;
+}
+
+
+// get peer id
+const char *
+    appnet_msg_get_peer_id (appnet_msg_t *self)
+{
+    return self->peer_id;
 }
 
 //  Get views as zlist

@@ -3,11 +3,34 @@
         Appnet-Application
     </constructor>
 
+    <constructor name="new_from_msg">
+        <argument name="msg" type="appnet_msg"/>
+    </constructor>
+
     <destructor/>
+
+    <method name = "get_name">
+        get application name
+        <return type="string"/>
+    </method>
 
     <method name = "set_name">
         set application name
         <argument name = "application_name" type = "string"/>
+    </method>
+
+    <method name = "get_peer_id">
+        get zyre peer id
+        <return type="string"/>
+    </method>
+
+    <method name = "set_peer_id">
+        set zyre peer id
+        <argument name = "peer_id" type = "string"/>
+    </method>    
+
+    <method name ="print">
+        print application data
     </method>
 
     <method name = "add_view">
@@ -26,6 +49,27 @@
         add application action ( appnet needs to be set as application-type )
         <argument name = "action" type = "string"/>
         <return type = "boolean" />
+    </method>
+
+    <!-- remote - actions -->
+    <method name = "remote_subscribe_view">
+        remote: subscribe for this application's view
+        <argument name = "view_name" type="string"/>
+    </method>
+
+    <method name = "remote_unsubscribe_view">
+        remote: unsubscribe from specified view
+        <argument name = "view_name" type="string"/>
+    </method>
+
+    <method name = "remote_unsubscribe_all">
+        remote: unsubscribe from all views of this application
+    </method>
+
+    <method name = "remote_trigger_action">
+        remote: trigger action
+        <argument name = "action_name" type="string"/>
+        <argument name = "json" type="string"/>
     </method>
 
     <method name = "get_action_list">

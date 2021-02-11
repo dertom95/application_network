@@ -59,6 +59,11 @@ APPLICATION_NETWORK_EXPORT zlist_t *
     appnet_msg_get_actions (appnet_msg_t *self);
 
 //  *** Draft method, for development use, may change without warning ***
+//  Get the peer id
+APPLICATION_NETWORK_EXPORT const char *
+    appnet_msg_get_peer_id (appnet_msg_t *self);
+
+//  *** Draft method, for development use, may change without warning ***
 //  Parse zyre parse zyre event
 APPLICATION_NETWORK_EXPORT void
     appnet_msg_parse_zyre_event (appnet_msg_t *self, zyre_event_t *zevent);

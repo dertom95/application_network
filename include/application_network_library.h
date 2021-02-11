@@ -83,8 +83,8 @@ typedef struct _appnet_msg_t appnet_msg_t;
 #define APPNET_HEADER_CLIENT  "client_header"  //  appnet client header
 #define APPNET_HEADER_IS_APPLICATION  "appnet_is_application"  //  appnet application header
 #define APPNET_HEADER_APPLICATION  "application_header"  //  appnet application header
-#define APPNET_TYPE_APPLICATION  1             //  application type
-#define APPNET_TYPE_CLIENT  2                  //  client type
+#define APPNET_TYPE_APPLICATION_ENTER  1       //  application type
+#define APPNET_TYPE_CLIENT_ENTER  2            //  client type
 
 //  Public classes, each with its own header file
 #include "appnet.h"

@@ -23,10 +23,6 @@ extern "C" {
 //  @interface
 //  This is a stable class, and may not change except for emergencies. It
 //  is provided in stable builds.
-//
-typedef void (appnet_client_cb) (
-    const char *app_name, zlist_t *views, zlist_t *actions);
-
 //  Appnet-Client
 APPLICATION_NETWORK_EXPORT appnet_client_t *
     appnet_client_new (void);
@@ -37,11 +33,7 @@ APPLICATION_NETWORK_EXPORT void
 
 //  set client name
 APPLICATION_NETWORK_EXPORT void
-    appnet_client_set_name (appnet_client_t *self, const char *client_name);
-
-//
-APPLICATION_NETWORK_EXPORT void
-    appnet_client_set_on_application_enter (appnet_client_t *self, appnet_client_cb callback);
+    appnet_client_set_name (appnet_client_t *self, const char *name);
 
 //  Self test of this class.
 APPLICATION_NETWORK_EXPORT void

@@ -8,6 +8,12 @@
 
     <destructor/>
 
+    <method name="set_timeout">
+        Set timeout
+        <argument name = "timeout" type="real"/>
+    </method>
+
+
     <method name="is_application">
         Is this appnet an application?
         <return type = "boolean"/>
@@ -53,6 +59,41 @@
     <method name="get_zyre_node">
     Get underlying zyre-node
         <return type="zyre"/>
+    </method>
+
+    <callback_type name = "on_app_enter_cb">
+       <argument name = "application" type = "appnet_application" />
+       <argument name = "userdata" type="anything" />
+    </callback_type>
+
+    <callback_type name = "on_client_enter_cb">
+       <argument name = "client" type = "appnet_client" />
+       <argument name = "userdata" type="anything" />
+    </callback_type>    
+
+    <method name = "set_on_application_enter">
+       <argument name ="callback" type="appnet_on_app_enter_cb" callback="1"/>
+       <argument name = "userdata" type="anything">
+       Userdata to be set on each callback-call
+       </argument>
+    </method>
+
+    <method name = "set_on_client_enter">
+        <argument name ="callback" type="appnet_on_client_enter_cb" callback="1"/>
+       <argument name = "userdata" type="anything" >
+       Userdata to be set on each callback-call
+       </argument>
+    </method>
+
+    <method name = "get_remote_application">
+        get application by name
+        <argument name="application_name" type="string"/>
+        <return type="appnet_application"/>
+    </method>
+
+    <method name = "get_remote_application_names">
+        Return all connection application names
+        <return type="zlist"/>
     </method>
 
  </class>

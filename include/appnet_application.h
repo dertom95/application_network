@@ -27,13 +27,33 @@ extern "C" {
 APPLICATION_NETWORK_EXPORT appnet_application_t *
     appnet_application_new (void);
 
+//  Create a new appnet_application.
+APPLICATION_NETWORK_EXPORT appnet_application_t *
+    appnet_application_new_from_msg (appnet_msg_t *msg);
+
 //  Destroy the appnet_application.
 APPLICATION_NETWORK_EXPORT void
     appnet_application_destroy (appnet_application_t **self_p);
 
+//  get application name
+APPLICATION_NETWORK_EXPORT const char *
+    appnet_application_get_name (appnet_application_t *self);
+
 //  set application name
 APPLICATION_NETWORK_EXPORT void
     appnet_application_set_name (appnet_application_t *self, const char *application_name);
+
+//  get zyre peer id
+APPLICATION_NETWORK_EXPORT const char *
+    appnet_application_get_peer_id (appnet_application_t *self);
+
+//  set zyre peer id
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_set_peer_id (appnet_application_t *self, const char *peer_id);
+
+//  print application data
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_print (appnet_application_t *self);
 
 //  add application view ( appnet needs to be set as application-type )
 APPLICATION_NETWORK_EXPORT bool
@@ -46,6 +66,22 @@ APPLICATION_NETWORK_EXPORT zlist_t *
 //  add application action ( appnet needs to be set as application-type )
 APPLICATION_NETWORK_EXPORT bool
     appnet_application_add_action (appnet_application_t *self, const char *action);
+
+//  remote: subscribe for this application's view
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_remote_subscribe_view (appnet_application_t *self, const char *view_name);
+
+//  remote: unsubscribe from specified view
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_remote_unsubscribe_view (appnet_application_t *self, const char *view_name);
+
+//  remote: unsubscribe from all views of this application
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_remote_unsubscribe_all (appnet_application_t *self);
+
+//  remote: trigger action
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_remote_trigger_action (appnet_application_t *self, const char *action_name, const char *json);
 
 //  get zlist of all actions
 APPLICATION_NETWORK_EXPORT zlist_t *

@@ -45,8 +45,8 @@
     <constant name = "APPNET_HEADER_IS_APPLICATION" value = "appnet_is_application" state = "stable" type = "string">appnet application header</constant>
     <constant name = "APPNET_HEADER_APPLICATION" value = "application_header" state = "stable" type = "string">appnet application header</constant>
 
-    <constant name = "APPNET_TYPE_APPLICATION" value="1" state="stable">application type</constant>
-    <constant name = "APPNET_TYPE_CLIENT" value="2"  state="stable">client type</constant>
+    <constant name = "APPNET_TYPE_APPLICATION_ENTER" value="1" state="stable">application type</constant>
+    <constant name = "APPNET_TYPE_CLIENT_ENTER" value="2"  state="stable">client type</constant>
     <!-- <constant name = "ZRE_DISCOVERY_PORT" value = "5670" state = "stable">IANA-assigned UDP port for ZRE</constant>
     <constant name = "REAP_INTERVAL" value = "1000" private = "1" >Once per second</constant>
     <constant name = "ZAP_DOMAIN_DEFAULT" value = "global" state = "draft" type = "string">Default ZAP domain (auth)</constant> -->

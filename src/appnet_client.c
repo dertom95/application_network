@@ -24,7 +24,6 @@
 
 struct _appnet_client_t {
     char* name;
-    appnet_client_cb* cb_on_application_enter;
 };
 
 
@@ -64,13 +63,6 @@ void
 {
     self->name = malloc(sizeof(char)*strlen(client_name)+1);
     strcpy(self->name,client_name);    
-}
-
-//
-void
-    appnet_client_set_on_application_enter (appnet_client_t *self, appnet_client_cb callback)
-{
-    self->cb_on_application_enter = callback;
 }
 
 //  --------------------------------------------------------------------------

@@ -23,6 +23,14 @@ extern "C" {
 //  @interface
 //  This is a stable class, and may not change except for emergencies. It
 //  is provided in stable builds.
+//
+typedef void (appnet_on_app_enter_cb) (
+    appnet_application_t *application, void *userdata);
+
+//
+typedef void (appnet_on_client_enter_cb) (
+    appnet_client_t *client, void *userdata);
+
 //  Appnet
 APPLICATION_NETWORK_EXPORT appnet_t *
     appnet_new (const char *node_name);
@@ -30,6 +38,10 @@ APPLICATION_NETWORK_EXPORT appnet_t *
 //  Destroy the appnet.
 APPLICATION_NETWORK_EXPORT void
     appnet_destroy (appnet_t **self_p);
+
+//  Set timeout
+APPLICATION_NETWORK_EXPORT void
+    appnet_set_timeout (appnet_t *self, float timeout);
 
 //  Is this appnet an application?
 APPLICATION_NETWORK_EXPORT bool
@@ -70,6 +82,22 @@ APPLICATION_NETWORK_EXPORT void
 //  Get underlying zyre-node
 APPLICATION_NETWORK_EXPORT zyre_t *
     appnet_get_zyre_node (appnet_t *self);
+
+//
+APPLICATION_NETWORK_EXPORT void
+    appnet_set_on_application_enter (appnet_t *self, appnet_on_app_enter_cb callback, void *userdata);
+
+//
+APPLICATION_NETWORK_EXPORT void
+    appnet_set_on_client_enter (appnet_t *self, appnet_on_client_enter_cb callback, void *userdata);
+
+//  get application by name
+APPLICATION_NETWORK_EXPORT appnet_application_t *
+    appnet_get_remote_application (appnet_t *self, const char *application_name);
+
+//  Return all connection application names
+APPLICATION_NETWORK_EXPORT zlist_t *
+    appnet_get_remote_application_names (appnet_t *self);
 
 //  Self test of this class.
 APPLICATION_NETWORK_EXPORT void

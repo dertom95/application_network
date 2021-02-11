@@ -18,5 +18,13 @@
 #include "application_network_library.h"
 
 //  Add your own public definitions here, if you need them
+#define STRFREE(str) if (str){free(str);str=NULL;} 
+
+#define STRCPY(DEST,SRC) \
+    STRFREE(DEST) \
+    {int size      = strlen(SRC)+1;\
+    DEST    = malloc(size);\
+    memcpy(DEST,SRC,size);}
+
 
 #endif
