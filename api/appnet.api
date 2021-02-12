@@ -45,7 +45,14 @@
     </method>    
 
     <method name="receive_event">
-        <return type = "appnet_msg"/>
+        Try to receive message. Or none if timeouted...(return type 0)
+        This method will call appropriate callbacks
+
+        <return type="number" size="1"/>
+    </method>
+
+    <method name="receive_all_events">
+        Receive all messages and call the corresponding callbacks
     </method>
 
     <method name="start">
@@ -61,39 +68,77 @@
         <return type="zyre"/>
     </method>
 
-    <callback_type name = "on_app_enter_cb">
-       <argument name = "application" type = "appnet_application" />
-       <argument name = "userdata" type="anything" />
-    </callback_type>
-
-    <callback_type name = "on_client_enter_cb">
-       <argument name = "client" type = "appnet_client" />
-       <argument name = "userdata" type="anything" />
-    </callback_type>    
-
-    <method name = "set_on_application_enter">
-       <argument name ="callback" type="appnet_on_app_enter_cb" callback="1"/>
-       <argument name = "userdata" type="anything">
-       Userdata to be set on each callback-call
-       </argument>
-    </method>
-
-    <method name = "set_on_client_enter">
-        <argument name ="callback" type="appnet_on_client_enter_cb" callback="1"/>
-       <argument name = "userdata" type="anything" >
-       Userdata to be set on each callback-call
-       </argument>
-    </method>
-
     <method name = "get_remote_application">
         get application by name
         <argument name="application_name" type="string"/>
         <return type="appnet_application"/>
     </method>
 
+    <method name = "get_remote_applications">
+        Return all connected applications
+        <return type="zhash"/>
+    </method>    
+
     <method name = "get_remote_application_names">
         Return all connection application names
         <return type="zlist"/>
+    </method>
+
+    <method name = "remote_send_string">
+        custom: send string to application
+        <argument name = "peer_id" type="string"/>
+        <argument name = "string_data" type="string"/>
+    </method>
+
+    <method name = "remote_send_buffer">
+        custom: send buffer(void* size) to application
+        <argument name = "peer_id" type="string"/>
+        <argument name = "data" type="anything"/>
+        <argument name = "size" type="size"/>
+    </method>    
+
+
+    <!-- Callbacks -->
+
+    <callback_type name = "on_app_enter">
+       <argument name = "application" type = "appnet_application" />
+       <argument name = "userdata" type="anything" />
+    </callback_type>
+
+    <callback_type name = "on_client_enter">
+       <argument name = "client" type = "appnet_client" />
+       <argument name = "userdata" type="anything" />
+    </callback_type>    
+
+    <callback_type name = "on_action_triggered">
+       <argument name = "action_name" type="string" />
+       <argument name = "args" type="string"/>
+       <argument name = "triggered_by_client" type = "anything" />
+       <argument name = "caller_type" type="number" size="1"/>
+       <argument name = "userdata" type="anything" />
+    </callback_type>    
+
+
+
+    <method name = "set_on_app_enter">
+       <argument name ="callback" type="appnet_on_app_enter" callback="1"/>
+       <argument name = "userdata" type="anything">
+       Userdata to be set on each callback-call
+       </argument>
+    </method>
+
+    <method name = "set_on_client_enter">
+        <argument name ="callback" type="appnet_on_client_enter" callback="1"/>
+       <argument name = "userdata" type="anything" >
+       Userdata to be set on each callback-call
+       </argument>
+    </method>
+
+    <method name = "set_on_action_triggered">
+        <argument name ="callback" type="appnet_on_action_triggered" callback="1"/>
+       <argument name = "userdata" type="anything" >
+       Userdata to be set on each callback-call
+       </argument>
     </method>
 
  </class>

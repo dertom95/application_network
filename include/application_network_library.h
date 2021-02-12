@@ -29,7 +29,7 @@
 //  APPLICATION_NETWORK version macros for compile-time API detection
 #define APPLICATION_NETWORK_VERSION_MAJOR 0
 #define APPLICATION_NETWORK_VERSION_MINOR 0
-#define APPLICATION_NETWORK_VERSION_PATCH 1
+#define APPLICATION_NETWORK_VERSION_PATCH 2
 
 #define APPLICATION_NETWORK_MAKE_VERSION(major, minor, patch) \
     ((major) * 10000 + (minor) * 100 + (patch))
@@ -83,8 +83,14 @@ typedef struct _appnet_msg_t appnet_msg_t;
 #define APPNET_HEADER_CLIENT  "client_header"  //  appnet client header
 #define APPNET_HEADER_IS_APPLICATION  "appnet_is_application"  //  appnet application header
 #define APPNET_HEADER_APPLICATION  "application_header"  //  appnet application header
+#define APPNET_CALLER_TYPE_CLIENT  0           //  Caller is a Client
+#define APPNET_CALLER_TYPE_APPLICATION  1      //  Caller is an Application
+#define APPNET_TYPE_TIMEOUT  0                 //  timeout
 #define APPNET_TYPE_APPLICATION_ENTER  1       //  application type
 #define APPNET_TYPE_CLIENT_ENTER  2            //  client type
+#define APPNET_TYPE_WISPHER_INCOMING  3        //  whisper incoming
+#define APPNET_TYPE_UNSUPPORTED  4             //  unsupported event
+#define APPNET_TYPE_UNKNOWN_PEER  5            //  peer unknown
 
 //  Public classes, each with its own header file
 #include "appnet.h"

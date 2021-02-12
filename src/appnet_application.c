@@ -29,6 +29,9 @@ struct _appnet_application_t {
     zlist_t* actions;
     char* name;
     char* peer_id;
+    bool remote;
+
+    appnet_t* parent;
 };
 
 
@@ -43,30 +46,69 @@ appnet_application_new (void)
     //  Initialize class properties here
     self->actions = zlist_new();
     self->views = zlist_new();
-
+    self->remote = false;
     return self;
 }
 
 appnet_application_t *
-    appnet_application_new_from_msg (appnet_msg_t *msg)
+    appnet_application_new_from_zyre (zyre_event_t *evt, appnet_t *parent)
 {
+    assert (parent);
+    assert (evt);
+
     appnet_application_t *self = (appnet_application_t *) zmalloc (sizeof (appnet_application_t));
     assert (self);
+    
+    self->remote = true;
+    self->parent = parent;
+
+    const char* app_meta = zyre_event_header(evt,APPNET_HEADER_APPLICATION);
+    cJSON* json = cJSON_Parse(app_meta);
+    cJSON* name = cJSON_GetObjectItemCaseSensitive(json,"name");
     //  Initialize class properties here
-    const char* msg_name    = appnet_msg_get_name(msg);
-    const char* msg_peer_id = appnet_msg_get_peer_id(msg);
-    zlist_t* msg_views   = appnet_msg_get_views(msg);
-    zlist_t* msg_actions = appnet_msg_get_actions(msg);
 
-    // int size      = strlen(msg_name)+1;
-    // self->name    = malloc(size);
-    // memcpy(self->name,msg_name,size);
+    if (cJSON_IsString(name) && name->valuestring){
+        appnet_application_set_name(self,name->valuestring);
+        self->name = malloc (sizeof (char) * strlen (name->valuestring) + 1);
+        strcpy (self->name, name->valuestring);
+    }
 
-    STRCPY(self->name,msg_name);
-    STRCPY(self->peer_id,msg_peer_id);
+    const cJSON* json_views = cJSON_GetObjectItemCaseSensitive(json,"views");
+    if (cJSON_IsArray(json_views)){
+        int size = cJSON_GetArraySize(json_views);
+        if (size>0){
+            self->views = zlist_new();
+            zlist_autofree(self->views);
+            for (int i=0;i<size;i++){
+                cJSON* json_view = cJSON_GetArrayItem(json_views,i);
+                char* view_name = cJSON_GetStringValue(json_view);
+                zlist_append(self->views,(void*)view_name);
+            }
+        }
+    }
 
-    self->actions = zlist_dup(msg_actions);
-    self->views   = zlist_dup(msg_views);
+    const cJSON* json_actions = cJSON_GetObjectItemCaseSensitive(json,"actions");
+    if (cJSON_IsArray(json_actions)){
+        int size = cJSON_GetArraySize(json_actions);
+        if (size>0){
+            self->actions = zlist_new();
+            zlist_autofree(self->actions);
+            for (int i=0;i<size;i++){
+                cJSON* json_action = cJSON_GetArrayItem(json_actions,i);
+                char* action_name = cJSON_GetStringValue(json_action);
+                zlist_append(self->actions,(void*)action_name);
+            }
+        }
+    }
+
+    cJSON_Delete(json);
+
+
+
+    const char* peer_id = zyre_event_peer_uuid(evt);
+    if (peer_id){
+        STRCPY(self->peer_id, peer_id);
+    }
 
     return self;
 }
@@ -107,8 +149,7 @@ const char *
 void
     appnet_application_set_name (appnet_application_t *self, const char *application_name)
 {
-    self->name = malloc(sizeof(char)*strlen(application_name)+1);
-    strcpy(self->name,application_name);
+    STRCPY(self->name,application_name);
 }
 
 //  get zyre peer id
@@ -143,7 +184,6 @@ zlist_t *
     return self->views;
 }
 
-
 //  add application action ( appnet needs to be set as application-type )
 bool
     appnet_application_add_action (appnet_application_t *self, const char *action)
@@ -163,8 +203,8 @@ zlist_t *
     return self->actions;
 }
 
-//  get application meta data a string-json
-const char *
+//  get application meta data as string-json
+char *
     appnet_application_to_metadata_json_string (appnet_application_t *self)
 {
     assert(self);
@@ -187,7 +227,7 @@ const char *
         ptr=zlist_next(self->actions);
     }
     cJSON_AddItemToObject(json_meta_header,"actions",json_actions);
-    const char* json_string = cJSON_PrintUnformatted(json_meta_header);
+    char* json_string = cJSON_PrintUnformatted(json_meta_header);
     cJSON_Delete(json_meta_header);
     return json_string;
 }
@@ -238,8 +278,11 @@ void
 
 //  remote: trigger action
 void
-    appnet_application_remote_trigger_action (appnet_application_t *self, const char *action_name, const char *json)
-{}
+    appnet_application_remote_trigger_action (appnet_application_t *self, const char *action_name, const char *args)
+{
+    char* json_data = appnet_msg_create_trigger_action(action_name,args);
+    appnet_remote_send_string(self->parent,self->peer_id,json_data);
+}
 
 
 //  --------------------------------------------------------------------------

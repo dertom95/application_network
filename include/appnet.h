@@ -24,12 +24,16 @@ extern "C" {
 //  This is a stable class, and may not change except for emergencies. It
 //  is provided in stable builds.
 //
-typedef void (appnet_on_app_enter_cb) (
+typedef void (appnet_on_app_enter) (
     appnet_application_t *application, void *userdata);
 
 //
-typedef void (appnet_on_client_enter_cb) (
+typedef void (appnet_on_client_enter) (
     appnet_client_t *client, void *userdata);
+
+//
+typedef void (appnet_on_action_triggered) (
+    const char *action_name, const char *args, void *triggered_by_client, uint8_t caller_type, void *userdata);
 
 //  Appnet
 APPLICATION_NETWORK_EXPORT appnet_t *
@@ -67,9 +71,14 @@ APPLICATION_NETWORK_EXPORT appnet_client_t *
 APPLICATION_NETWORK_EXPORT appnet_client_t *
     appnet_get_client (appnet_t *self);
 
-//
-APPLICATION_NETWORK_EXPORT appnet_msg_t *
+//  Try to receive message. Or none if timeouted...(return type 0)
+//  This method will call appropriate callbacks
+APPLICATION_NETWORK_EXPORT uint8_t
     appnet_receive_event (appnet_t *self);
+
+//  Receive all messages and call the corresponding callbacks
+APPLICATION_NETWORK_EXPORT void
+    appnet_receive_all_events (appnet_t *self);
 
 //  Start the node
 APPLICATION_NETWORK_EXPORT void
@@ -83,21 +92,37 @@ APPLICATION_NETWORK_EXPORT void
 APPLICATION_NETWORK_EXPORT zyre_t *
     appnet_get_zyre_node (appnet_t *self);
 
-//
-APPLICATION_NETWORK_EXPORT void
-    appnet_set_on_application_enter (appnet_t *self, appnet_on_app_enter_cb callback, void *userdata);
-
-//
-APPLICATION_NETWORK_EXPORT void
-    appnet_set_on_client_enter (appnet_t *self, appnet_on_client_enter_cb callback, void *userdata);
-
 //  get application by name
 APPLICATION_NETWORK_EXPORT appnet_application_t *
     appnet_get_remote_application (appnet_t *self, const char *application_name);
 
+//  Return all connected applications
+APPLICATION_NETWORK_EXPORT zhash_t *
+    appnet_get_remote_applications (appnet_t *self);
+
 //  Return all connection application names
 APPLICATION_NETWORK_EXPORT zlist_t *
     appnet_get_remote_application_names (appnet_t *self);
+
+//  custom: send string to application
+APPLICATION_NETWORK_EXPORT void
+    appnet_remote_send_string (appnet_t *self, const char *peer_id, const char *string_data);
+
+//  custom: send buffer(void* size) to application
+APPLICATION_NETWORK_EXPORT void
+    appnet_remote_send_buffer (appnet_t *self, const char *peer_id, void *data, size_t size);
+
+//
+APPLICATION_NETWORK_EXPORT void
+    appnet_set_on_app_enter (appnet_t *self, appnet_on_app_enter callback, void *userdata);
+
+//
+APPLICATION_NETWORK_EXPORT void
+    appnet_set_on_client_enter (appnet_t *self, appnet_on_client_enter callback, void *userdata);
+
+//
+APPLICATION_NETWORK_EXPORT void
+    appnet_set_on_action_triggered (appnet_t *self, appnet_on_action_triggered callback, void *userdata);
 
 //  Self test of this class.
 APPLICATION_NETWORK_EXPORT void

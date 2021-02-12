@@ -13,7 +13,7 @@
 # Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.61)
 #
-AC_INIT([application_network],[0.0.1],[thomas.trocha@gmail.com])
+AC_INIT([application_network],[0.0.2],[thomas.trocha@gmail.com])
 
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)

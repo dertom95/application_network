@@ -1,0 +1,6 @@
+(x) - fix: multiple applications at once - bug
+(x) - Test: multiple applications mit multiple clients
+
+( ) - trigger_action with arg
+( ) - check if you can send multipple zframes with msg
+( ) - detect LEAVE-messages and remove applications/clients from peer-hashtabless

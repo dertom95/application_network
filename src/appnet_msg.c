@@ -23,11 +23,7 @@
 //  Structure of our class
 
 struct _appnet_msg_t {
-    byte type;
-    char* name;
-    char* peer_id;
-    zlist_t* views;
-    zlist_t* actions;
+    int filler;     //  Declare class properties here
 };
 
 
@@ -35,14 +31,11 @@ struct _appnet_msg_t {
 //  Create a new appnet_msg
 
 appnet_msg_t *
-    appnet_msg_new (zyre_event_t *zyre_event)
+appnet_msg_new (void)
 {
     appnet_msg_t *self = (appnet_msg_t *) zmalloc (sizeof (appnet_msg_t));
     assert (self);
     //  Initialize class properties here
-    if (zyre_event){
-        appnet_msg_parse_zyre_event(self,zyre_event);
-    }
     return self;
 }
 
@@ -63,127 +56,23 @@ appnet_msg_destroy (appnet_msg_t **self_p)
     }
 }
 
-void appnet_msg_parse_event_enter(appnet_msg_t* self, zyre_event_t *evt)
+//  Create trigger action msg (as json)
+char *
+    appnet_msg_create_trigger_action (const char *action_name,const char *args)
 {
-    const char* is_application = zyre_event_header(evt,APPNET_HEADER_IS_APPLICATION);
-    if (is_application){
-
-        self->type = APPNET_TYPE_APPLICATION_ENTER;
-        const char* app_meta = zyre_event_header(evt,APPNET_HEADER_APPLICATION);
-        cJSON* json = cJSON_Parse(app_meta);
-        cJSON* name = cJSON_GetObjectItemCaseSensitive(json,"name");
-        
-        if (cJSON_IsString(name) && name->valuestring){
-            self->name = malloc (sizeof (char) * strlen (name->valuestring) + 1);
-            strcpy (self->name, name->valuestring);
-        }
-
-        const cJSON* json_views = cJSON_GetObjectItemCaseSensitive(json,"views");
-        if (cJSON_IsArray(json_views)){
-            int size = cJSON_GetArraySize(json_views);
-            if (size>0){
-                self->views = zlist_new();
-                zlist_autofree(self->views);
-                for (int i=0;i<size;i++){
-                    cJSON* json_view = cJSON_GetArrayItem(json_views,i);
-                    char* view_name = cJSON_GetStringValue(json_view);
-                    zlist_append(self->views,(void*)view_name);
-                }
-            }
-        }
-
-        const cJSON* json_actions = cJSON_GetObjectItemCaseSensitive(json,"actions");
-        if (cJSON_IsArray(json_actions)){
-            int size = cJSON_GetArraySize(json_actions);
-            if (size>0){
-                self->actions = zlist_new();
-                zlist_autofree(self->actions);
-                for (int i=0;i<size;i++){
-                    cJSON* json_action = cJSON_GetArrayItem(json_actions,i);
-                    char* action_name = cJSON_GetStringValue(json_action);
-                    zlist_append(self->actions,(void*)action_name);
-                }
-            }
-        }
-
-        cJSON_Delete(json);
-    }
-
-    const char* is_client = zyre_event_header(evt,APPNET_HEADER_IS_CLIENT);
-    if (is_client){
-        self->type = APPNET_TYPE_CLIENT_ENTER;
-        const char* app_meta = zyre_event_header(evt,APPNET_HEADER_APPLICATION);
-        cJSON* json = cJSON_Parse(app_meta);
-        cJSON* name = cJSON_GetObjectItemCaseSensitive(json,"name");   
-        cJSON_free(json);         
-    }     
+    assert(action_name);
+    cJSON* json = cJSON_CreateObject();
+    // type
+    cJSON_AddStringToObject(json,APPNET_MSG_FIELD_TYPE,APPNET_MSG_TYPE_TRIGGER_ACTION);
+    // action-name
+    cJSON_AddStringToObject(json,APPNET_MSG_FIELD_ACTION_NAME,action_name);
+    // action-name
+    cJSON_AddStringToObject(json,APPNET_MSG_FIELD_ACTION_ARGS,args);
+    char* json_string=NULL;
+    STRCPY(json_string,cJSON_PrintUnformatted(json));
+    cJSON_Delete(json);
+    return json_string;
 }
-
-//  Parse zyre parse zyre event
-void
-    appnet_msg_parse_zyre_event (appnet_msg_t *self, zyre_event_t *evt)
-{
-    const char* evt_type = zyre_event_type(evt);
-
-    STRCPY(self->peer_id,zyre_event_peer_uuid(evt));
-
-    if (streq(evt_type,"ENTER")){
-        appnet_msg_parse_event_enter(self,evt);
-    }
-    else if (streq(evt_type,"WHISPER")){
-        zmsg_t* incomming = zyre_event_msg(evt);
-        zframe_t* frame = zmsg_pop(incomming);
-        zhash_t* ht = zhash_unpack(frame);
-        zhash_autofree(ht);
-        char* result = (char*)zhash_lookup(ht,"tom");
-        int a=0;
-        zhash_destroy(&ht);
-    }
-
-    //free((void*)evt_type);
-    //zyre_event_print(evt);
-}
-
-//  Get Message-Type
-uint8_t
-    appnet_msg_get_type (appnet_msg_t *self)
-{
-    assert(self);
-    return self->type;
-}
-
-//  Get Name
- const char *
-    appnet_msg_get_name (appnet_msg_t *self)
-{
-    assert(self);
-    return self->name;
-}
-
-
-// get peer id
-const char *
-    appnet_msg_get_peer_id (appnet_msg_t *self)
-{
-    return self->peer_id;
-}
-
-//  Get views as zlist
- zlist_t *
-    appnet_msg_get_views (appnet_msg_t *self)
-{
-    assert(self);
-    return self->views;
-}
-
-//  Get actions as zlist
- zlist_t *
-    appnet_msg_get_actions (appnet_msg_t *self)
-{
-    assert(self);
-    return self->actions;
-}
-
 
 //  --------------------------------------------------------------------------
 //  Self test of this class
@@ -208,7 +97,7 @@ appnet_msg_test (bool verbose)
 
     //  @selftest
     //  Simple create/destroy test
-    appnet_msg_t *self = appnet_msg_new (NULL);
+    appnet_msg_t *self = appnet_msg_new ();
     assert (self);
     appnet_msg_destroy (&self);
     //  @end

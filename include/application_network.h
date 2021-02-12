@@ -22,7 +22,7 @@
 
 #define STRCPY(DEST,SRC) \
     STRFREE(DEST) \
-    {int size      = strlen(SRC)+1;\
+    {int size      = sizeof(char)*strlen(SRC)+1;\
     DEST    = malloc(size);\
     memcpy(DEST,SRC,size);}
 

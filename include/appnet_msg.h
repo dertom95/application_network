@@ -25,48 +25,16 @@ extern "C" {
 //  stable builds by default. If you use this in applications, please ask
 //  for it to be pushed to stable state. Use --enable-drafts to enable.
 #ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
-#define APPNET_MSG_APPLICATION_ENTER 1       //
-#define APPNET_MSG_CLIENT_ENTER 2            //
+#define APPNET_MSG_FIELD_TYPE "msg_type"     //
+#define APPNET_MSG_TYPE_TRIGGER_ACTION "trigger_action"  //
+#define APPNET_MSG_FIELD_ACTION_NAME "action_name"  //
+#define APPNET_MSG_FIELD_ACTION_ARGS "action_args"  //
 
 //  *** Draft method, for development use, may change without warning ***
-//  Create a new empty appnet_msg
-APPLICATION_NETWORK_EXPORT appnet_msg_t *
-    appnet_msg_new (zyre_event_t *zyre_event);
-
-//  *** Draft method, for development use, may change without warning ***
-//  Destroy a appnet_msg instance
-APPLICATION_NETWORK_EXPORT void
-    appnet_msg_destroy (appnet_msg_t **self_p);
-
-//  *** Draft method, for development use, may change without warning ***
-//  Get Message-Type
-APPLICATION_NETWORK_EXPORT uint8_t
-    appnet_msg_get_type (appnet_msg_t *self);
-
-//  *** Draft method, for development use, may change without warning ***
-//  Get Name
-APPLICATION_NETWORK_EXPORT const char *
-    appnet_msg_get_name (appnet_msg_t *self);
-
-//  *** Draft method, for development use, may change without warning ***
-//  Get views as zlist
-APPLICATION_NETWORK_EXPORT zlist_t *
-    appnet_msg_get_views (appnet_msg_t *self);
-
-//  *** Draft method, for development use, may change without warning ***
-//  Get actions as zlist
-APPLICATION_NETWORK_EXPORT zlist_t *
-    appnet_msg_get_actions (appnet_msg_t *self);
-
-//  *** Draft method, for development use, may change without warning ***
-//  Get the peer id
-APPLICATION_NETWORK_EXPORT const char *
-    appnet_msg_get_peer_id (appnet_msg_t *self);
-
-//  *** Draft method, for development use, may change without warning ***
-//  Parse zyre parse zyre event
-APPLICATION_NETWORK_EXPORT void
-    appnet_msg_parse_zyre_event (appnet_msg_t *self, zyre_event_t *zevent);
+//  Create trigger action msg (as json)
+//  Caller owns return value and must destroy it when done.
+APPLICATION_NETWORK_EXPORT char *
+    appnet_msg_create_trigger_action (const char *action_name, const char *args);
 
 //  *** Draft method, for development use, may change without warning ***
 //  Self test of this class.

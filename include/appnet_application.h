@@ -29,7 +29,7 @@ APPLICATION_NETWORK_EXPORT appnet_application_t *
 
 //  Create a new appnet_application.
 APPLICATION_NETWORK_EXPORT appnet_application_t *
-    appnet_application_new_from_msg (appnet_msg_t *msg);
+    appnet_application_new_from_zyre (zyre_event_t *evt, appnet_t *parent);
 
 //  Destroy the appnet_application.
 APPLICATION_NETWORK_EXPORT void
@@ -63,6 +63,10 @@ APPLICATION_NETWORK_EXPORT bool
 APPLICATION_NETWORK_EXPORT zlist_t *
     appnet_application_get_view_list (appnet_application_t *self);
 
+//  get zlist of all actions
+APPLICATION_NETWORK_EXPORT zlist_t *
+    appnet_application_get_action_list (appnet_application_t *self);
+
 //  add application action ( appnet needs to be set as application-type )
 APPLICATION_NETWORK_EXPORT bool
     appnet_application_add_action (appnet_application_t *self, const char *action);
@@ -81,14 +85,11 @@ APPLICATION_NETWORK_EXPORT void
 
 //  remote: trigger action
 APPLICATION_NETWORK_EXPORT void
-    appnet_application_remote_trigger_action (appnet_application_t *self, const char *action_name, const char *json);
-
-//  get zlist of all actions
-APPLICATION_NETWORK_EXPORT zlist_t *
-    appnet_application_get_action_list (appnet_application_t *self);
+    appnet_application_remote_trigger_action (appnet_application_t *self, const char *action_name, const char *args);
 
 //  get application meta data a string-json
-APPLICATION_NETWORK_EXPORT const char *
+//  Caller owns return value and must destroy it when done.
+APPLICATION_NETWORK_EXPORT char *
     appnet_application_to_metadata_json_string (appnet_application_t *self);
 
 //  Self test of this class.

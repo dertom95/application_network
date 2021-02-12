@@ -3,11 +3,30 @@
         Appnet-Client
     </constructor>
 
+    <constructor name="new_from_zyre">
+        <argument name="zyre_evt" type="zyre_event"/>
+    </constructor>
+
     <destructor/>
+
+    <method name="to_metadata_json_string">
+        <return type="string" fresh="1"/>
+    </method>
+
+    <method name = "get_name">
+        get client name
+        <return type = "string"/>
+    </method>
 
     <method name = "set_name">
         set client name
         <argument name = "name" type = "string"/>
     </method>
+
+    <method name = "get_peer_id">
+        get client name
+        <return type = "string"/>
+    </method>
+
 
  </class>

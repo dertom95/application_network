@@ -1,29 +1,29 @@
-- connect to the appnet
-  - constructor(NODENAME)
+(x)- connect to the appnet
+(x)    - constructor(NODENAME)
 
-- application
-  - set_views(list<string>)    PUBLIC
-  - set_actions(list<string>)  PUBLIC
-  - send_metadata()            PRIVATE
-  - set_on_action(action_name)     PUBLIC
-  - set_on_view(view_name)         PUBLIC
-  - broadcast_event(event_name)    PUBLIC
-   - "globals.cheat.resource"
-   - "ecs.entity.created"
+( )  - application
+(x)    - set_views(list<string>)    PUBLIC
+(x)    - set_actions(list<string>)  PUBLIC
+(x)    - send_metadata()            PRIVATE
+(x)    - set_on_action_callback     PUBLIC
+( )    - set_on_view(view_name)         PUBLIC
+( )    - broadcast_event(event_name)    PUBLIC
+( )    - "globals.cheat.resource"
+( )    - "ecs.entity.created"
 
-- application_peer
-  - peer-address
-  - view-names
-  - action-names
+(x)  - application_peer
+(x)    - peer-address
+(x)    - view-names
+(x)    - action-names
 
-- view
-  - list_applications() -> list<application_peer>
-  
-  - subscribe_view(application_peer,view_name)
-  - set_on_view(view_name,DATA)
+( )  - view
+(x)    - list_applications() -> list<application_peer>
+    
+( )    - subscribe_view(application_peer,view_name)
+( )    - set_on_view(view_name,DATA)
 
-  - subscribe_eventgroup( string group )
-    - e.g. group: "globals.cheat"
-  - set_on_event(string eventname, EVENTDATA)
-  
-  - trigger_action(applcation_peer,action_name)
+( )    - subscribe_eventgroup( string group )
+( )      - e.g. group: "globals.cheat"
+( )    - set_on_event(string eventname, EVENTDATA)
+    
+( )    - trigger_action(applcation_peer,action_name)

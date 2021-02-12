@@ -196,7 +196,7 @@ ENDIF (cjson_FOUND)
 ########################################################################
 set(APPLICATION_NETWORK_VERSION_MAJOR 0)
 set(APPLICATION_NETWORK_VERSION_MINOR 0)
-set(APPLICATION_NETWORK_VERSION_PATCH 1)
+set(APPLICATION_NETWORK_VERSION_PATCH 2)
 set(APPLICATION_NETWORK_VERSION "${APPLICATION_NETWORK_VERSION_MAJOR}.${APPLICATION_NETWORK_VERSION_MINOR}.${APPLICATION_NETWORK_VERSION_PATCH}")
 message(STATUS "Detected APPLICATION_NETWORK Version - ${APPLICATION_NETWORK_VERSION}")
 
@@ -348,7 +348,7 @@ endif()
 ########################################################################
 # pkgconfig
 ########################################################################
-set (VERSION "0.0.1")
+set (VERSION "0.0.2")
 set (prefix "${CMAKE_INSTALL_PREFIX}")
 set (exec_prefix "\${prefix}")
 set (libdir "\${prefix}/lib${LIB_SUFFIX}")

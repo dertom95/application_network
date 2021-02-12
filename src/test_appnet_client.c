@@ -20,13 +20,35 @@
 
 #include "application_network_classes.h"
 
+#include <stdio.h>
+#include <signal.h>
+
+
+static int s_interrupted = 0;
+static void s_signal_handler (int signal_value)
+{
+    s_interrupted = 1;
+}
+
+static void s_catch_signals (void)
+{
+    struct sigaction action;
+    action.sa_handler = s_signal_handler;
+    action.sa_flags = 0;
+    sigemptyset (&action.sa_mask);
+    sigaction (SIGINT, &action, NULL);
+    sigaction (SIGTERM, &action, NULL);
+}
+
 void on_app_enter(appnet_application_t* app,void* userdata)
 {
     appnet_t* self = (appnet_t*)userdata;
 
     appnet_application_print(app);
 
+
 }
+
 
 int main (int argc, char *argv [])
 {
@@ -57,7 +79,7 @@ int main (int argc, char *argv [])
     //  Simple create/destroy test
     appnet_t* node = appnet_new ("node-client");
     appnet_set_timeout(node,10.0f);
-    appnet_set_on_application_enter(node,on_app_enter,node);
+    appnet_set_on_app_enter(node,on_app_enter,node);
     
     // set this node to be an application
     appnet_client_t* client = appnet_set_client(node);
@@ -66,17 +88,48 @@ int main (int argc, char *argv [])
 
     //zyre_t* zyre = appnet_get_zyre_node(node);
     sleep(1);
-    int count = 5;
-    while (count--){
-        appnet_msg_t* msg = appnet_receive_event(node);
-        uint8_t msg_type = appnet_msg_get_type(msg);
+    s_catch_signals ();
+    //int count = 5;
+    while (true){
+
+        if (s_interrupted){
+            break;
+        }
+
+        uint8_t rc = appnet_receive_event(node);
+        // if (rc == APPNET_TYPE_TIMEOUT){
+        //     sleep(0.f);
+        // }
+
+        zlist_t* app_keys = appnet_get_remote_application_names(node);
+        int app_amount = zlist_size(app_keys);
+        
+        if (app_amount == 0) continue;
+
+        int pick_app = rand() % app_amount;
+        char* app_name = zlist_first(app_keys);
+        while(pick_app-->0){
+            app_name = zlist_next(app_keys);
+        }
+//        appnet_application_t* app = (appnet_app)
+        assert(app_name);
+        appnet_application_t* app = appnet_get_remote_application(node,app_name);
+        
+        int random_value = rand() % 50;
+        if (random_value < 25){
+            appnet_application_remote_trigger_action(app,"kick_settlers","1,2,3");
+        } else {
+            appnet_application_remote_trigger_action(app,"restart","0");
+        }
+
+        sleep(1);
     }
 
-    printf("applications:\n");
-    zlist_t* app_keys = appnet_get_remote_application_names(node);
-    for (void* ptr=zlist_first(app_keys);ptr!=NULL;ptr=zlist_next(app_keys)){
-        printf("\t%s\n",(char*)ptr);
-    }
+    // printf("applications:\n");
+    // zlist_t* app_keys = appnet_get_remote_application_names(node);
+    // for (void* ptr=zlist_first(app_keys);ptr!=NULL;ptr=zlist_next(app_keys)){
+    //     printf("\t%s\n",(char*)ptr);
+    // }
 
     appnet_stop(node);
     appnet_destroy(&node);

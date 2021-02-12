@@ -21,50 +21,20 @@
     file, You can obtain one at http://mozilla.org/MPL/2.0/.
  -->
 <class name = "appnet_msg">
-    <constant name = "application_enter" value = "1" >
 
-    </constant>
-    <constant name = "client_enter" value = "2" >
+<constant name="FIELD_TYPE" type="string" value="msg_type"/>
+<constant name="TYPE_TRIGGER_ACTION" type="string" value="trigger_action"/>
 
-    </constant>
+<constant name="FIELD_ACTION_NAME" type="string" value="action_name"/>
+<constant name="FIELD_ACTION_ARGS" type="string" value="action_args"/>
 
-<constructor>
-    <argument name="zyre_event" type ="zyre_event"/>
-    Create a new empty appnet_msg
-</constructor>
+<method name = "create_trigger_action" singleton="1">
+    Create trigger action msg (as json)
 
-<destructor>
-    Destroy a appnet_msg instance
-</destructor>
+    <argument name = "action_name" type="string"/>
+    <argument name = "args" type="string"/>
 
-<method name = "get_type">
-    Get Message-Type
-    <return type="number" size="1"/>
-</method>
-
-<method name = "get_name">
-    Get Name
-    <return type="string"/>
-</method>
-
-<method name = "get_views">
-    Get views as zlist
-    <return type="zlist"/>
-</method>
-
-<method name = "get_actions">
-    Get actions as zlist
-    <return type="zlist"/>
-</method>
-
-<method name = "get_peer_id">
-    Get the peer id
-    <return type="string"/>
-</method>
-
-<method name = "parse_zyre_event">
-    Parse zyre parse zyre event
-    <argument name="zevent" type="zyre_event" />
+    <return type="string" fresh="1"/>
 </method>
 
 
