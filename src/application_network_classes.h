@@ -49,6 +49,9 @@
 //  *** Draft global constants, defined for internal use only ***
 #define APPNET_PROTO_CALLER_APPLICATION  "caller_app"  //  zframe: caller is an application
 #define APPNET_PROTO_CALLER_CLIENT  "caller_client"  //  zframe: caller is a client
+#define APPNET_PROTO_DATA_STRING  "string_data"  //
+#define APPNET_PROTO_DATA_BUFFER  "buffer_data"  //
+#define APPNET_MSG_TRIGGER_ACTION  "trigger_action"  //
 
 //  Self test for private classes
 APPLICATION_NETWORK_PRIVATE void

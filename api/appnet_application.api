@@ -99,6 +99,13 @@
         <argument name = "args" type="string"/>
     </method>
 
+    <method name = "remote_trigger_action_data">
+        remote: trigger action
+        <argument name = "action_name" type="string"/>
+        <argument name = "data" type="anything"/>
+        <argument name = "size" type="size"/>
+    </method>
+
     <method name = "to_metadata_json_string">
         get application meta data a string-json
         <return type = "string" fresh="1"/>

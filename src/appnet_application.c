@@ -324,12 +324,24 @@ void
     appnet_application_remote_unsubscribe_all (appnet_application_t *self)
 {}
 
-//  remote: trigger action
+//  remote: trigger action (string)
 void
     appnet_application_remote_trigger_action (appnet_application_t *self, const char *action_name, const char *args)
 {
-    char* json_data = appnet_msg_create_trigger_action(action_name,args);
-    appnet_remote_send_string(self->parent,self->peer_id,json_data);
+    zmsg_t* msg = appnet_msg_create_trigger_action(action_name,args);
+    
+    zyre_t* zyre = appnet_get_zyre_node(self->parent);
+    zyre_whisper(zyre,self->peer_id,&msg);
+}
+
+//  remote: trigger action (data-buffer-argument)
+void
+    appnet_application_remote_trigger_action_data (appnet_application_t *self, const char *action_name, void *data, size_t size)
+{
+    zmsg_t* msg = appnet_msg_create_trigger_action_data(action_name,data,size);
+    
+    zyre_t* zyre = appnet_get_zyre_node(self->parent);
+    zyre_whisper(zyre,self->peer_id,&msg);
 }
 
 

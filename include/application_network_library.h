@@ -97,6 +97,9 @@ typedef struct _appnet_msg_t appnet_msg_t;
 #ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
 #define APPNET_PROTO_CALLER_APPLICATION  "caller_app"  //  zframe: caller is an application
 #define APPNET_PROTO_CALLER_CLIENT  "caller_client"  //  zframe: caller is a client
+#define APPNET_PROTO_DATA_STRING  "string_data"  //
+#define APPNET_PROTO_DATA_BUFFER  "buffer_data"  //
+#define APPNET_MSG_TRIGGER_ACTION  "trigger_action"  //
 #endif // APPLICATION_NETWORK_BUILD_DRAFT_API
 
 //  Public classes, each with its own header file

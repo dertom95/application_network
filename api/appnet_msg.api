@@ -22,19 +22,22 @@
  -->
 <class name = "appnet_msg">
 
-<constant name="FIELD_TYPE" type="string" value="msg_type"/>
-<constant name="TYPE_TRIGGER_ACTION" type="string" value="trigger_action"/>
-
-<constant name="FIELD_ACTION_NAME" type="string" value="action_name"/>
-<constant name="FIELD_ACTION_ARGS" type="string" value="action_args"/>
-
 <method name = "create_trigger_action" singleton="1">
-    Create trigger action msg (as json)
+    Create trigger action msg (as zmsg) with string argument
 
     <argument name = "action_name" type="string"/>
     <argument name = "args" type="string"/>
 
-    <return type="string" fresh="1"/>
+    <return type="zmsg" fresh="1"/>
+</method>
+
+<method name = "create_trigger_action_data" singleton="1">
+    Create trigger action msg (as zmsg) with data-buffer
+
+    <argument name = "action_name" type="string"/>
+    <argument name = "data" type="anything"/>
+    <argument name = "size" type="size"/>
+    <return type="zmsg" fresh="1"/>
 </method>
 
 

@@ -2,6 +2,7 @@
 (x) - Test: multiple applications mit multiple clients
 
 (x) - add test
-( ) - trigger_action with arg
+(x) - trigger_action with arg (String)
+(x) - trigger_action with arg (data-blobs)
 ( ) - check if you can send multipple zframes with msg
 ( ) - detect LEAVE-messages and remove applications/clients from peer-hashtabless

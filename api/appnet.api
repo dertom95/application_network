@@ -130,6 +130,15 @@
        <argument name = "userdata" type="anything" />
     </callback_type>    
 
+    <callback_type name = "on_action_triggered_data">
+       <argument name = "action_name" type="string" />
+       <argument name = "args_data" type="anything"/>
+       <argument name = "args_size" type="size"/>
+       <argument name = "caller_type" type="number" size="1"/>
+       <argument name = "called_by" type = "anything" />
+       <argument name = "userdata" type="anything" />
+    </callback_type>       
+
     <callback_type name = "on_client_enter">
        <argument name = "client" type = "appnet_client" />
        <argument name = "userdata" type="anything" />
@@ -177,6 +186,13 @@
 
     <method name = "set_on_action_triggered">
         <argument name ="callback" type="appnet_on_action_triggered" callback="1"/>
+       <argument name = "userdata" type="anything" >
+       Userdata to be set on each callback-call
+       </argument>
+    </method>
+
+    <method name = "set_on_action_triggered_data">
+       <argument name ="callback" type="appnet_on_action_triggered_data" callback="1"/>
        <argument name = "userdata" type="anything" >
        Userdata to be set on each callback-call
        </argument>

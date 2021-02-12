@@ -44,6 +44,36 @@ void on_action_triggered (const char *action_name,
     free(sign);
 }
 
+void on_action_triggered_data (const char *action_name,
+                          void* data,
+                          size_t size,
+                          uint8_t caller_type,
+                          void *called_by,
+                          void *userdata)
+{
+    char* sign = appnet_node_signature(userdata);
+    
+    zframe_t* frame = zframe_new(data,size);
+    zhash_t* ht = zhash_unpack(frame);
+    zhash_autofree(ht);
+    
+    zlist_t* keys = zhash_keys(ht);
+    const char* current_key =  zlist_first(keys);
+
+    printf("%s: triggered action:%s\n"
+                                              ,sign
+                                              ,action_name);
+    printf("arguments hashtable-data:\n");
+
+    int key_size = zlist_size(keys)-1;
+    for(;key_size>=0;key_size--){
+        const char* value = zhash_lookup(ht,current_key);
+        printf("\t%s = %s\n",current_key,value);
+        current_key = zlist_next(keys);
+    }
+    free(sign);
+}
+
 void on_app_enter(appnet_application_t* app,void* userdata)
 {
     assert(app);
@@ -119,13 +149,33 @@ void add_default_callbacks(appnet_t* node){
     appnet_set_on_client_enter(node,on_client_enter,node);
     appnet_set_on_client_exit(node,on_client_exit,node);
     appnet_set_on_action_triggered(node,on_action_triggered,node);
+    appnet_set_on_action_triggered_data(node,on_action_triggered_data,node);
 }
 
-bool test_trigger(appnet_t* app,appnet_t* client)
+bool test_trigger_string_argument(appnet_t* app,appnet_t* client)
 {
     zlist_t* app_names = appnet_get_remote_application_names(client);
     appnet_application_t* remote_app = appnet_get_remote_application(client,zlist_first(app_names));
     appnet_application_remote_trigger_action(remote_app,"doit","argument");
+    int rc = appnet_receive_event(app);
+    assert(rc == APPNET_TYPE_TRIGGER_ACTION);
+
+    return true;
+}
+
+bool test_trigger_data_argument(appnet_t* app,appnet_t* client)
+{
+    zhash_t* ht = zhash_new();
+    zhash_insert(ht,"fortuna","duesseldorf");
+    zhash_insert(ht,"zyre","rocks");
+    zhash_insert(ht,"hello","there!");
+    zframe_t* frame = zhash_pack(ht);
+    void* data  = zframe_data(frame);
+    size_t size = zframe_size(frame);
+    
+    zlist_t* app_names = appnet_get_remote_application_names(client);
+    appnet_application_t* remote_app = appnet_get_remote_application(client,zlist_first(app_names));
+    appnet_application_remote_trigger_action_data(remote_app,"doit",data,size);
     int rc = appnet_receive_event(app);
     assert(rc == APPNET_TYPE_TRIGGER_ACTION);
 
@@ -197,7 +247,9 @@ int main (int argc, char *argv [])
         zsys_info ("test_appnet_all - ");
 
 
-    test_enter_exit(test_trigger);
+  //  test_enter_exit(NULL); // start / stop
+//    test_enter_exit(test_trigger_string_argument); // start / trigger-string / stop
+    test_enter_exit(test_trigger_data_argument); // start / trigger-string / stop
 
     return 0;
 }

@@ -25,16 +25,17 @@ extern "C" {
 //  stable builds by default. If you use this in applications, please ask
 //  for it to be pushed to stable state. Use --enable-drafts to enable.
 #ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
-#define APPNET_MSG_FIELD_TYPE "msg_type"     //
-#define APPNET_MSG_TYPE_TRIGGER_ACTION "trigger_action"  //
-#define APPNET_MSG_FIELD_ACTION_NAME "action_name"  //
-#define APPNET_MSG_FIELD_ACTION_ARGS "action_args"  //
+//  *** Draft method, for development use, may change without warning ***
+//  Create trigger action msg (as zmsg) with string argument
+//  Caller owns return value and must destroy it when done.
+APPLICATION_NETWORK_EXPORT zmsg_t *
+    appnet_msg_create_trigger_action (const char *action_name, const char *args);
 
 //  *** Draft method, for development use, may change without warning ***
-//  Create trigger action msg (as json)
+//  Create trigger action msg (as zmsg) with data-buffer
 //  Caller owns return value and must destroy it when done.
-APPLICATION_NETWORK_EXPORT char *
-    appnet_msg_create_trigger_action (const char *action_name, const char *args);
+APPLICATION_NETWORK_EXPORT zmsg_t *
+    appnet_msg_create_trigger_action_data (const char *action_name, void *data, size_t size);
 
 //  *** Draft method, for development use, may change without warning ***
 //  Self test of this class.

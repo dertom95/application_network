@@ -52,6 +52,12 @@
     <constant name = "APPNET_PROTO_CALLER_APPLICATION" type="string" value="caller_app">zframe: caller is an application</constant>
     <constant name = "APPNET_PROTO_CALLER_CLIENT" type="string" value="caller_client">zframe: caller is a client</constant>
 
+    <constant name = "APPNET_PROTO_DATA_STRING" type="string" value="string_data"/>
+    <constant name = "APPNET_PROTO_DATA_BUFFER" type="string" value="buffer_data"/>
+
+    <constant name = "APPNET_MSG_TRIGGER_ACTION" type="string" value="trigger_action"/>
+
+
     <constant name = "APPNET_TYPE_TIMEOUT" value="0" state="stable">timeout</constant>
     <constant name = "APPNET_TYPE_UNSUPPORTED" value="1"  state="stable">unsupported event</constant>
     <constant name = "APPNET_TYPE_UNKNOWN_PEER" value="2"  state="stable">peer unknown</constant>

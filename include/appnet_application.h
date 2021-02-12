@@ -99,6 +99,10 @@ APPLICATION_NETWORK_EXPORT void
 APPLICATION_NETWORK_EXPORT void
     appnet_application_remote_trigger_action (appnet_application_t *self, const char *action_name, const char *args);
 
+//  remote: trigger action
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_remote_trigger_action_data (appnet_application_t *self, const char *action_name, void *data, size_t size);
+
 //  get application meta data a string-json
 //  Caller owns return value and must destroy it when done.
 APPLICATION_NETWORK_EXPORT char *

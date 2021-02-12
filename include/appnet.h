@@ -36,6 +36,10 @@ typedef void (appnet_on_action_triggered) (
     const char *action_name, const char *args, uint8_t caller_type, void *called_by, void *userdata);
 
 //
+typedef void (appnet_on_action_triggered_data) (
+    const char *action_name, void *args_data, size_t args_size, uint8_t caller_type, void *called_by, void *userdata);
+
+//
 typedef void (appnet_on_client_enter) (
     appnet_client_t *client, void *userdata);
 
@@ -152,6 +156,10 @@ APPLICATION_NETWORK_EXPORT void
 //
 APPLICATION_NETWORK_EXPORT void
     appnet_set_on_action_triggered (appnet_t *self, appnet_on_action_triggered callback, void *userdata);
+
+//
+APPLICATION_NETWORK_EXPORT void
+    appnet_set_on_action_triggered_data (appnet_t *self, appnet_on_action_triggered_data callback, void *userdata);
 
 //  Self test of this class.
 APPLICATION_NETWORK_EXPORT void

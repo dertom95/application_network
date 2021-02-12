@@ -50,6 +50,9 @@ struct _appnet_t
 
     appnet_on_action_triggered *on_action_triggered;
     void *on_action_triggered_userdata;
+
+    appnet_on_action_triggered_data *on_action_triggered_data;
+    void *on_action_triggered_data_userdata;
     
     appnet_on_app_exit *on_app_exit;
     void *on_app_exit_userdata;    
@@ -64,6 +67,7 @@ struct _appnet_t
 
 // --------------- callbacks ----------------------------------------------
 IMPLEMENT_CALLBACK_SETTER (on_action_triggered);
+IMPLEMENT_CALLBACK_SETTER (on_action_triggered_data);
 IMPLEMENT_CALLBACK_SETTER (on_client_enter);
 IMPLEMENT_CALLBACK_SETTER (on_app_enter);
 IMPLEMENT_CALLBACK_SETTER (on_app_exit);
@@ -361,37 +365,55 @@ uint8_t appnet_receive_event_whisper (appnet_t *self, zyre_event_t *evt)
     }
 
     zmsg_t *msg = zyre_event_msg (evt);
-    char *incoming_str = zmsg_popstr (msg);
-    cJSON *json = cJSON_Parse (incoming_str);
+
+    char *whisper_type = zmsg_popstr(msg);
+
 
     int result_code = APPNET_TYPE_UNKNOWN_WHISPER_TYPE;
 
-    const char *whisper_type =
-      cJSON_GetObjectItem (json, APPNET_MSG_FIELD_TYPE)->valuestring;
+    if (streq (whisper_type, APPNET_MSG_TRIGGER_ACTION)) {
+        char *action_name = zmsg_popstr(msg);
 
-    if (streq (whisper_type, APPNET_MSG_TYPE_TRIGGER_ACTION)) {
-        if (self->on_action_triggered) {
-            const char *action_name =
-              cJSON_GetObjectItem (json, APPNET_MSG_FIELD_ACTION_NAME)
-                ->valuestring;
-            const char *action_args =
-              cJSON_GetObjectItem (json, APPNET_MSG_FIELD_ACTION_ARGS)
-                ->valuestring;
+        char *argument_data_type = zmsg_popstr(msg);
+                        
+        if (self->on_action_triggered 
+                && streq(argument_data_type,APPNET_PROTO_DATA_STRING)
+        ){
+            char *action_args = zmsg_popstr(msg);
 
             self->on_action_triggered (action_name
                                         ,action_args
                                         ,caller_type
                                         ,client
                                         ,self->on_action_triggered_userdata);
+
+            free(action_args);
         }
+        else if (self->on_action_triggered_data 
+                    &&streq(argument_data_type,APPNET_PROTO_DATA_BUFFER)
+        ){
+            zframe_t* frame = zmsg_pop(msg);
+            size_t size = zframe_size(frame);
+            void* dest = malloc(size);
+            memcpy(dest,zframe_data(frame),size);
+            zframe_destroy(&frame);
+
+            self->on_action_triggered_data (action_name
+                                        ,dest
+                                        ,size
+                                        ,caller_type
+                                        ,client
+                                        ,self->on_action_triggered_data_userdata);                
+        }
+        free(action_name);
+        free(argument_data_type);
         result_code = APPNET_TYPE_TRIGGER_ACTION;
     } else {
         fprintf (stderr, "unsupported WHISPER-Type:%s", whisper_type);
         zyre_event_print (evt);
     }
 
-    free (incoming_str);
-    cJSON_Delete (json);
+    free(whisper_type);
 
     return result_code;
 }

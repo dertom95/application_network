@@ -56,23 +56,45 @@ appnet_msg_destroy (appnet_msg_t **self_p)
     }
 }
 
-//  Create trigger action msg (as json)
-char *
-    appnet_msg_create_trigger_action (const char *action_name,const char *args)
+zmsg_t *
+    appnet_msg_create_trigger_action (const char *action_name, const char *args)
 {
-    assert(action_name);
-    cJSON* json = cJSON_CreateObject();
-    // type
-    cJSON_AddStringToObject(json,APPNET_MSG_FIELD_TYPE,APPNET_MSG_TYPE_TRIGGER_ACTION);
-    // action-name
-    cJSON_AddStringToObject(json,APPNET_MSG_FIELD_ACTION_NAME,action_name);
-    // action-name
-    cJSON_AddStringToObject(json,APPNET_MSG_FIELD_ACTION_ARGS,args);
-    char* json_string=NULL;
-    STRCPY(json_string,cJSON_PrintUnformatted(json));
-    cJSON_Delete(json);
-    return json_string;
+    zmsg_t* msg = zmsg_new();
+    zmsg_pushstr(msg,args);
+    zmsg_pushstr(msg,APPNET_PROTO_DATA_STRING);
+    zmsg_pushstr(msg,action_name);
+    zmsg_pushstr(msg,APPNET_MSG_TRIGGER_ACTION);
+    return msg;
 }
+
+zmsg_t *
+    appnet_msg_create_trigger_action_data (const char *action_name, void *data, size_t size)
+{
+    zmsg_t* msg = zmsg_new();
+    zmsg_pushmem(msg,data,size);
+    zmsg_pushstr(msg,APPNET_PROTO_DATA_BUFFER);
+    zmsg_pushstr(msg,action_name);
+    zmsg_pushstr(msg,APPNET_MSG_TRIGGER_ACTION);
+    return msg;
+}
+
+//  Create trigger action msg (as json)
+// char *
+//     appnet_msg_create_trigger_action (const char *action_name,const char *args)
+// {
+//     assert(action_name);
+//     cJSON* json = cJSON_CreateObject();
+//     // type
+//     cJSON_AddStringToObject(json,APPNET_MSG_FIELD_TYPE,APPNET_MSG_TYPE_TRIGGER_ACTION);
+//     // action-name
+//     cJSON_AddStringToObject(json,APPNET_MSG_FIELD_ACTION_NAME,action_name);
+//     // action-name
+//     cJSON_AddStringToObject(json,APPNET_MSG_FIELD_ACTION_ARGS,args);
+//     char* json_string=NULL;
+//     STRCPY(json_string,cJSON_PrintUnformatted(json));
+//     cJSON_Delete(json);
+//     return json_string;
+// }
 
 //  --------------------------------------------------------------------------
 //  Self test of this class
