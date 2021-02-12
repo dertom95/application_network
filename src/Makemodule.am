@@ -56,6 +56,13 @@ src_test_appnet_client_LDADD = ${program_libs}
 src_test_appnet_client_SOURCES = src/test_appnet_client.c
 endif #ENABLE_TEST_APPNET_CLIENT
 
+if ENABLE_TEST_APPNET_ALL
+bin_PROGRAMS += src/test_appnet_all
+src_test_appnet_all_CPPFLAGS = ${AM_CPPFLAGS}
+src_test_appnet_all_LDADD = ${program_libs}
+src_test_appnet_all_SOURCES = src/test_appnet_all.c
+endif #ENABLE_TEST_APPNET_ALL
+
 if ENABLE_APPLICATION_NETWORK_SELFTEST
 check_PROGRAMS += src/application_network_selftest
 noinst_PROGRAMS += src/application_network_selftest
@@ -75,6 +82,7 @@ dist_api_DATA = \
 # define custom target for all products of /src
 src: \
 		src/test_appnet_client \
+		src/test_appnet_all \
 		src/application_network_selftest \
 		src/libapplication_network.la
 

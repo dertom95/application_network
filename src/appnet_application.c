@@ -39,7 +39,7 @@ struct _appnet_application_t {
 //  Create a new appnet_application
 
 appnet_application_t *
-appnet_application_new (void)
+appnet_application_new (appnet_t* parent)
 {
     appnet_application_t *self = (appnet_application_t *) zmalloc (sizeof (appnet_application_t));
     assert (self);
@@ -47,6 +47,12 @@ appnet_application_new (void)
     self->actions = zlist_new();
     self->views = zlist_new();
     self->remote = false;
+    self->parent = parent;
+
+    zyre_t* zyre_node = appnet_get_zyre_node(self->parent);
+    const char* peer_id = zyre_uuid(zyre_node);
+    STRCPY(self->peer_id,peer_id);
+
     return self;
 }
 
@@ -138,6 +144,14 @@ appnet_application_destroy (appnet_application_t **self_p)
     }
 }
 
+//  return parent appnet-node
+appnet_t *
+    appnet_application_parent (appnet_application_t *self)
+{
+    assert(self);
+    return self->parent;
+}
+
 // get application name
 const char *
     appnet_application_get_name (appnet_application_t *self)
@@ -175,6 +189,23 @@ bool
     int rc = zlist_append(self->views,(void*)viewname);
     return rc == 0;
 }
+
+// add multiple views to applications
+void
+    appnet_application_add_views (appnet_application_t *self, uint8_t view_amount, const char *view, ...)
+{
+    assert(self);
+
+    va_list args;
+
+    va_start (args, view);
+    while(view_amount--){
+        appnet_application_add_view(self,view);
+        view = va_arg (args, const char*);
+    }
+    va_end(args);
+}
+
 //  get zlist of all views
 zlist_t *
     appnet_application_get_view_list (appnet_application_t *self)
@@ -193,6 +224,23 @@ bool
     int rc = zlist_append(self->actions,(void*)action);
     return rc == 0;
 }
+
+//  add multiple views to applications
+void
+    appnet_application_add_actions (appnet_application_t *self, uint8_t action_amount, const char *action, ...)
+{
+    assert(self);
+
+    va_list args;
+
+    va_start (args, action);
+    while(action_amount--){
+        appnet_application_add_action(self,action);
+        action = va_arg (args, const char*);
+    }
+    va_end(args);    
+}    
+
 
 //  get zlist of all actions
 zlist_t *
@@ -308,9 +356,9 @@ appnet_application_test (bool verbose)
 
     //  @selftest
     //  Simple create/destroy test
-    appnet_application_t *self = appnet_application_new ();
-    assert (self);
-    appnet_application_destroy (&self);
+    // appnet_application_t *self = appnet_application_new ();
+    // assert (self);
+    // appnet_application_destroy (&self);
     //  @end
     printf ("OK\n");
 }

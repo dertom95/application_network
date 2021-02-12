@@ -6,7 +6,7 @@
 all-local: doc
 
 # Public programs ("main" tags in project.xml), auto-regenerated:
-MAN1 = test_appnet_client.1
+MAN1 = test_appnet_client.1 test_appnet_all.1
 # Public classes ("class" tags in project.xml), auto-regenerated:
 MAN3 = appnet.3 appnet_application.3 appnet_client.3 appnet_msg.3
 # Project overview, written by a human after initial skeleton:
@@ -87,6 +87,11 @@ GENERATED_DOCS += test_appnet_client.txt test_appnet_client.doc
 test_appnet_client.txt: $(top_srcdir)/src/test_appnet_client.c
 	mkdir -p "$(builddir)/$(@D)"
 	"$(srcdir)/mkman" "test_appnet_client" "$(builddir)/test_appnet_client.txt" "$(srcdir)/.."
+
+GENERATED_DOCS += test_appnet_all.txt test_appnet_all.doc
+test_appnet_all.txt: $(top_srcdir)/src/test_appnet_all.c
+	mkdir -p "$(builddir)/$(@D)"
+	"$(srcdir)/mkman" "test_appnet_all" "$(builddir)/test_appnet_all.txt" "$(srcdir)/.."
 
 
 clean-local:

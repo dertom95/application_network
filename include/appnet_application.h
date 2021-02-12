@@ -25,7 +25,7 @@ extern "C" {
 //  is provided in stable builds.
 //  Appnet-Application
 APPLICATION_NETWORK_EXPORT appnet_application_t *
-    appnet_application_new (void);
+    appnet_application_new (appnet_t *parent);
 
 //  Create a new appnet_application.
 APPLICATION_NETWORK_EXPORT appnet_application_t *
@@ -51,6 +51,10 @@ APPLICATION_NETWORK_EXPORT const char *
 APPLICATION_NETWORK_EXPORT void
     appnet_application_set_peer_id (appnet_application_t *self, const char *peer_id);
 
+//  return parent appnet-node
+APPLICATION_NETWORK_EXPORT appnet_t *
+    appnet_application_parent (appnet_application_t *self);
+
 //  print application data
 APPLICATION_NETWORK_EXPORT void
     appnet_application_print (appnet_application_t *self);
@@ -58,6 +62,10 @@ APPLICATION_NETWORK_EXPORT void
 //  add application view ( appnet needs to be set as application-type )
 APPLICATION_NETWORK_EXPORT bool
     appnet_application_add_view (appnet_application_t *self, const char *view);
+
+//  add multiple views to applications
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_add_views (appnet_application_t *self, uint8_t view_amount, const char *view, ...);
 
 //  get zlist of all views
 APPLICATION_NETWORK_EXPORT zlist_t *
@@ -70,6 +78,10 @@ APPLICATION_NETWORK_EXPORT zlist_t *
 //  add application action ( appnet needs to be set as application-type )
 APPLICATION_NETWORK_EXPORT bool
     appnet_application_add_action (appnet_application_t *self, const char *action);
+
+//  add multiple views to applications
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_add_actions (appnet_application_t *self, uint8_t action_amount, const char *action, ...);
 
 //  remote: subscribe for this application's view
 APPLICATION_NETWORK_EXPORT void

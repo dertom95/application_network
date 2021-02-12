@@ -26,6 +26,7 @@ struct _appnet_client_t {
     char* name;
     char* peer_id;
     bool remote;
+    appnet_t* parent;
 };
 
 
@@ -33,12 +34,17 @@ struct _appnet_client_t {
 //  Create a new appnet_client
 
 appnet_client_t *
-appnet_client_new (void)
+appnet_client_new (appnet_t* parent)
 {
     appnet_client_t *self = (appnet_client_t *) zmalloc (sizeof (appnet_client_t));
     assert (self);
     //  Initialize class properties here
     self->remote = false;
+    self->parent = parent;
+
+    zyre_t* zyre_node = appnet_get_zyre_node(self->parent);
+    const char* peer_id = zyre_uuid(zyre_node);
+    STRCPY(self->peer_id,peer_id);    
 
     return self;
 }
@@ -90,6 +96,14 @@ appnet_client_destroy (appnet_client_t **self_p)
     }
 }
 
+//  return parent appnet-node
+appnet_t *
+    appnet_client_parent (appnet_client_t *self)
+{
+    assert(self);
+    return self->parent;
+}
+
 /// get client name
 const char *
     appnet_client_get_name (appnet_client_t *self)
@@ -118,6 +132,14 @@ char *
     return out_json;
 }
 
+//  print the client info
+void
+    appnet_client_print (appnet_client_t *self)
+{
+    printf("client:[%s|%s] remote:%s\n",self->name,self->peer_id,self->remote?"true":"false");
+}    
+
+
 //  --------------------------------------------------------------------------
 //  Self test of this class
 
@@ -141,9 +163,9 @@ appnet_client_test (bool verbose)
 
     //  @selftest
     //  Simple create/destroy test
-    appnet_client_t *self = appnet_client_new ();
-    assert (self);
-    appnet_client_destroy (&self);
+    // appnet_client_t *self = appnet_client_new ();
+    // assert (self);
+    // appnet_client_destroy (&self);
     //  @end
     printf ("OK\n");
 }

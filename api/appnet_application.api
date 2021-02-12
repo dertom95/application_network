@@ -1,5 +1,6 @@
 <class name = "appnet_application" state = "stable">
      <constructor>
+        <argument name="parent" type="appnet"/>
         Appnet-Application
     </constructor>
 
@@ -30,6 +31,11 @@
         <argument name = "peer_id" type = "string"/>
     </method>    
 
+    <method name = "parent">
+        return parent appnet-node
+        <return type="appnet"/>
+    </method>
+
     <method name ="print">
         print application data
     </method>
@@ -38,6 +44,13 @@
         add application view ( appnet needs to be set as application-type )
         <argument name = "view" type = "string"/>
         <return type = "boolean" />
+    </method>
+
+    <method name = "add_views">
+        add multiple views to applications
+        <argument name = "view_amount" type="number">The amount of views to be added</argument>
+        <!-- <argument name = "views" type = "va_list"/> -->
+        <argument name = "view" type = "string" variadic = "1" />
     </method>
 
     <method name = "get_view_list">
@@ -57,6 +70,13 @@
         <argument name = "action" type = "string"/>
         <return type = "boolean" />
     </method>
+
+    <method name = "add_actions">
+        add multiple views to applications
+        <argument name = "action_amount" type="number">The amount of actions to be added</argument>
+        <!-- <argument name = "views" type = "va_list"/> -->
+        <argument name = "action" type = "string" variadic = "1" />
+    </method>    
 
     <!-- remote - actions -->
     <method name = "remote_subscribe_view">

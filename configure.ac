@@ -700,6 +700,16 @@ AC_ARG_ENABLE([test_appnet_client],
 AM_CONDITIONAL([ENABLE_TEST_APPNET_CLIENT], [test x$enable_test_appnet_client != xno])
 AM_COND_IF([ENABLE_TEST_APPNET_CLIENT], [AC_MSG_NOTICE([ENABLE_TEST_APPNET_CLIENT defined])])
 
+# Check for test_appnet_all intent
+AC_ARG_ENABLE([test_appnet_all],
+    AS_HELP_STRING([--enable-test_appnet_all],
+        [Compile and install 'test_appnet_all' [default=yes]]),
+    [enable_test_appnet_all=$enableval],
+    [enable_test_appnet_all=yes])
+
+AM_CONDITIONAL([ENABLE_TEST_APPNET_ALL], [test x$enable_test_appnet_all != xno])
+AM_COND_IF([ENABLE_TEST_APPNET_ALL], [AC_MSG_NOTICE([ENABLE_TEST_APPNET_ALL defined])])
+
 # Check for application_network_selftest intent
 AC_ARG_ENABLE([application_network_selftest],
     AS_HELP_STRING([--enable-application_network_selftest],

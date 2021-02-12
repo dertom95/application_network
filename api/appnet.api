@@ -63,14 +63,26 @@
     Stop the node
     </method>
 
+    <method name="node_signature">
+    returns info for underlying application or client
+        <return type="string" fresh="1"/>
+    </method>
+
     <method name="get_zyre_node">
     Get underlying zyre-node
         <return type="zyre"/>
     </method>
 
+    <method name = "get_remote_client">
+        get client by uuid
+        <argument name="client_uuid" type="string"/>
+        <return type="appnet_client"/>
+    </method>
+
+
     <method name = "get_remote_application">
-        get application by name
-        <argument name="application_name" type="string"/>
+        get application by uuid
+        <argument name="application_uuid" type="string"/>
         <return type="appnet_application"/>
     </method>
 
@@ -113,11 +125,40 @@
     <callback_type name = "on_action_triggered">
        <argument name = "action_name" type="string" />
        <argument name = "args" type="string"/>
-       <argument name = "triggered_by_client" type = "anything" />
        <argument name = "caller_type" type="number" size="1"/>
+       <argument name = "called_by" type = "anything" />
        <argument name = "userdata" type="anything" />
     </callback_type>    
 
+    <callback_type name = "on_client_enter">
+       <argument name = "client" type = "appnet_client" />
+       <argument name = "userdata" type="anything" />
+    </callback_type>  
+
+    <callback_type name = "on_client_exit">
+       <argument name = "client" type = "appnet_client" />
+       <argument name = "userdata" type="anything" />
+    </callback_type>      
+
+    <callback_type name = "on_app_exit">
+       <argument name = "client" type = "appnet_application" />
+       <argument name = "userdata" type="anything" />
+    </callback_type>   
+
+
+    <method name = "set_on_client_exit">
+       <argument name ="callback" type="appnet_on_client_exit" callback="1"/>
+       <argument name = "userdata" type="anything">
+       Userdata to be set on each callback-call
+       </argument>
+    </method>
+
+    <method name = "set_on_app_exit">
+       <argument name ="callback" type="appnet_on_app_exit" callback="1"/>
+       <argument name = "userdata" type="anything">
+       Userdata to be set on each callback-call
+       </argument>
+    </method>
 
 
     <method name = "set_on_app_enter">

@@ -86,11 +86,18 @@ typedef struct _appnet_msg_t appnet_msg_t;
 #define APPNET_CALLER_TYPE_CLIENT  0           //  Caller is a Client
 #define APPNET_CALLER_TYPE_APPLICATION  1      //  Caller is an Application
 #define APPNET_TYPE_TIMEOUT  0                 //  timeout
-#define APPNET_TYPE_APPLICATION_ENTER  1       //  application type
-#define APPNET_TYPE_CLIENT_ENTER  2            //  client type
-#define APPNET_TYPE_WISPHER_INCOMING  3        //  whisper incoming
-#define APPNET_TYPE_UNSUPPORTED  4             //  unsupported event
-#define APPNET_TYPE_UNKNOWN_PEER  5            //  peer unknown
+#define APPNET_TYPE_UNSUPPORTED  1             //  unsupported event
+#define APPNET_TYPE_UNKNOWN_PEER  2            //  peer unknown
+#define APPNET_TYPE_APPLICATION_ENTER  3       //  application entered network
+#define APPNET_TYPE_CLIENT_ENTER  4            //  client entered network
+#define APPNET_TYPE_APPLICATION_EXIT  5        //  application entered network
+#define APPNET_TYPE_CLIENT_EXIT  6             //  client entered network
+#define APPNET_TYPE_UNKNOWN_WHISPER_TYPE  7    //  unknown whisper type
+#define APPNET_TYPE_TRIGGER_ACTION  8          //  trigger action
+#ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
+#define APPNET_PROTO_CALLER_APPLICATION  "caller_app"  //  zframe: caller is an application
+#define APPNET_PROTO_CALLER_CLIENT  "caller_client"  //  zframe: caller is a client
+#endif // APPLICATION_NETWORK_BUILD_DRAFT_API
 
 //  Public classes, each with its own header file
 #include "appnet.h"

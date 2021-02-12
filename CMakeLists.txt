@@ -430,6 +430,36 @@ install(TARGETS test_appnet_client
     RUNTIME DESTINATION bin
 )
 add_executable(
+    test_appnet_all
+    "${SOURCE_DIR}/src/test_appnet_all.c"
+)
+if (TARGET application_network)
+target_link_libraries(
+    test_appnet_all
+    application_network
+    ${LIBZMQ_LIBRARIES}
+    ${CZMQ_LIBRARIES}
+    ${ZYRE_LIBRARIES}
+    ${CJSON_LIBRARIES}
+    ${OPTIONAL_LIBRARIES}
+)
+endif()
+if (NOT TARGET application_network AND TARGET application_network-static)
+target_link_libraries(
+    test_appnet_all
+    application_network-static
+    ${LIBZMQ_LIBRARIES}
+    ${CZMQ_LIBRARIES}
+    ${ZYRE_LIBRARIES}
+    ${CJSON_LIBRARIES}
+    ${OPTIONAL_LIBRARIES}
+    ${OPTIONAL_LIBRARIES_STATIC}
+)
+endif()
+install(TARGETS test_appnet_all
+    RUNTIME DESTINATION bin
+)
+add_executable(
     application_network_selftest
     "${SOURCE_DIR}/src/application_network_selftest.c"
 )
@@ -547,6 +577,7 @@ set(cmake_generated ${PROJECT_BINARY_DIR}/CMakeCache.txt
                     ${PROJECT_BINARY_DIR}/src/libapplication_network.so
                     ${PROJECT_BINARY_DIR}/src/application_network_selftest
                     ${PROJECT_BINARY_DIR}/src/test_appnet_client
+                    ${PROJECT_BINARY_DIR}/src/test_appnet_all
                     ${PROJECT_BINARY_DIR}/src/application_network_selftest
 )
 

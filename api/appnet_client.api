@@ -1,6 +1,7 @@
 <class name = "appnet_client" state = "stable">
      <constructor>
         Appnet-Client
+        <argument name="parent" type="appnet"/>
     </constructor>
 
     <constructor name="new_from_zyre">
@@ -28,5 +29,13 @@
         <return type = "string"/>
     </method>
 
+    <method name = "print">
+        print the client info
+    </method>
+
+    <method name = "parent">
+        return parent appnet-node
+        <return type="appnet"/>
+    </method>
 
  </class>

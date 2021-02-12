@@ -25,7 +25,7 @@ extern "C" {
 //  is provided in stable builds.
 //  Appnet-Client
 APPLICATION_NETWORK_EXPORT appnet_client_t *
-    appnet_client_new (void);
+    appnet_client_new (appnet_t *parent);
 
 //  Create a new appnet_client.
 APPLICATION_NETWORK_EXPORT appnet_client_t *
@@ -51,6 +51,14 @@ APPLICATION_NETWORK_EXPORT void
 //  get client name
 APPLICATION_NETWORK_EXPORT const char *
     appnet_client_get_peer_id (appnet_client_t *self);
+
+//  print the client info
+APPLICATION_NETWORK_EXPORT void
+    appnet_client_print (appnet_client_t *self);
+
+//  return parent appnet-node
+APPLICATION_NETWORK_EXPORT appnet_t *
+    appnet_client_parent (appnet_client_t *self);
 
 //  Self test of this class.
 APPLICATION_NETWORK_EXPORT void

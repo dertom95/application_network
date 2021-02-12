@@ -26,5 +26,12 @@
     DEST    = malloc(size);\
     memcpy(DEST,SRC,size);}
 
+#define IMPLEMENT_CALLBACK_SETTER(callbackname)                                \
+    void appnet_set_##callbackname (                                           \
+      appnet_t *self, appnet_##callbackname callback, void *userdata)          \
+    {                                                                          \
+        self->callbackname = callback;                                         \
+        self->callbackname##_userdata = userdata;                              \
+    }
 
 #endif

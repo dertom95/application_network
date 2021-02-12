@@ -50,12 +50,24 @@ struct _appnet_t
 
     appnet_on_action_triggered *on_action_triggered;
     void *on_action_triggered_userdata;
+    
+    appnet_on_app_exit *on_app_exit;
+    void *on_app_exit_userdata;    
+
+    appnet_on_client_exit *on_client_exit;
+    void *on_client_exit_userdata;    
 
     // peers
     peers_t peers;
 };
 
 
+// --------------- callbacks ----------------------------------------------
+IMPLEMENT_CALLBACK_SETTER (on_action_triggered);
+IMPLEMENT_CALLBACK_SETTER (on_client_enter);
+IMPLEMENT_CALLBACK_SETTER (on_app_enter);
+IMPLEMENT_CALLBACK_SETTER (on_app_exit);
+IMPLEMENT_CALLBACK_SETTER (on_client_exit);
 //  --------------------------------------------------------------------------
 //  Create a new appnet
 
@@ -108,19 +120,6 @@ void appnet_destroy (appnet_t **self_p)
     }
 }
 
-// --------------- callbacks ----------------------------------------------
-#define IMPLEMENT_CALLBACK_SETTER(callbackname)                                \
-    void appnet_set_##callbackname (                                           \
-      appnet_t *self, appnet_##callbackname callback, void *userdata)          \
-    {                                                                          \
-        self->callbackname = callback;                                         \
-        self->callbackname##_userdata = userdata;                              \
-    }
-
-IMPLEMENT_CALLBACK_SETTER (on_action_triggered);
-IMPLEMENT_CALLBACK_SETTER (on_client_enter);
-IMPLEMENT_CALLBACK_SETTER (on_app_enter);
-
 // ---------------- class implementation -------------------------------------
 
 //  Set timeout
@@ -139,7 +138,7 @@ appnet_application_t *appnet_set_application (appnet_t *self)
     assert (!self->application_data);
     assert (!self->client_data);
 
-    self->application_data = appnet_application_new ();
+    self->application_data = appnet_application_new (self);
     return self->application_data;
 }
 
@@ -174,7 +173,7 @@ appnet_client_t *appnet_set_client (appnet_t *self)
     assert (!self->application_data);
     assert (!self->client_data);
 
-    self->client_data = appnet_client_new ();
+    self->client_data = appnet_client_new (self);
     return self->client_data;
 }
 
@@ -236,6 +235,25 @@ zyre_t *appnet_get_zyre_node (appnet_t *self)
     return self->zyre_node;
 }
 
+//  returns info for underlying application or client
+char *
+    appnet_node_signature (appnet_t *self)
+{
+    assert(self);
+    char buf[1024];
+    if (appnet_is_client(self)){
+        appnet_client_t* client = appnet_get_client(self);
+        snprintf(buf,sizeof(buf),"client[%s|%s]",appnet_client_get_name(client),appnet_client_get_peer_id(client));
+    } else {
+        appnet_application_t* app = appnet_get_application(self);
+        snprintf(buf,sizeof(buf),"application[%s|%s]",appnet_application_get_name(app),appnet_application_get_peer_id(app));
+    }
+    char* result = NULL;
+    STRCPY(result,buf);
+    return result;
+}
+
+
 uint8_t appnet_receive_event_enter (appnet_t *self, zyre_event_t *evt)
 {
     assert (self);
@@ -276,6 +294,46 @@ uint8_t appnet_receive_event_enter (appnet_t *self, zyre_event_t *evt)
     }
 }
 
+// EXIT - event
+uint8_t appnet_receive_event_exit (appnet_t *self, zyre_event_t *evt)
+{
+    assert(self);
+    assert(evt);
+
+    const char* peer_id = zyre_event_peer_uuid(evt);
+
+    int result_code = APPNET_TYPE_UNSUPPORTED;
+
+    appnet_client_t* client = appnet_get_remote_client(self,peer_id);
+    if (client){
+        if (self->on_client_exit){
+            self->on_client_exit(client,self->on_client_exit_userdata);
+        }
+        // found client => remove it from peers
+        zhash_delete(self->peers.clients,peer_id);
+        appnet_client_destroy(&client);
+        result_code = APPNET_TYPE_CLIENT_EXIT;
+    }
+    else {
+        appnet_application_t* app = appnet_get_remote_application(self,peer_id);
+
+        if (app) {
+            result_code = APPNET_TYPE_UNKNOWN_PEER;
+
+            if (self->on_app_exit){
+                self->on_app_exit(app,self->on_client_exit_userdata);
+            }
+            // remove app from peers-hashtable and destory object
+            zhash_delete(self->peers.applications, peer_id);
+            appnet_application_destroy(&app);
+            result_code = APPNET_TYPE_APPLICATION_EXIT;
+        } else {
+            result_code = APPNET_TYPE_UNKNOWN_PEER;
+        }
+    }
+    return result_code;
+}
+
 uint8_t appnet_receive_event_whisper (appnet_t *self, zyre_event_t *evt)
 {
     assert (self);
@@ -306,6 +364,8 @@ uint8_t appnet_receive_event_whisper (appnet_t *self, zyre_event_t *evt)
     char *incoming_str = zmsg_popstr (msg);
     cJSON *json = cJSON_Parse (incoming_str);
 
+    int result_code = APPNET_TYPE_UNKNOWN_WHISPER_TYPE;
+
     const char *whisper_type =
       cJSON_GetObjectItem (json, APPNET_MSG_FIELD_TYPE)->valuestring;
 
@@ -318,19 +378,22 @@ uint8_t appnet_receive_event_whisper (appnet_t *self, zyre_event_t *evt)
               cJSON_GetObjectItem (json, APPNET_MSG_FIELD_ACTION_ARGS)
                 ->valuestring;
 
-            self->on_action_triggered (action_name, action_args, client,
-                                       caller_type,
-                                       self->on_action_triggered_userdata);
+            self->on_action_triggered (action_name
+                                        ,action_args
+                                        ,caller_type
+                                        ,client
+                                        ,self->on_action_triggered_userdata);
         }
-        return APPNET_TYPE_WISPHER_INCOMING;
+        result_code = APPNET_TYPE_TRIGGER_ACTION;
     } else {
         fprintf (stderr, "unsupported WHISPER-Type:%s", whisper_type);
         zyre_event_print (evt);
-        return APPNET_TYPE_UNSUPPORTED;
     }
 
     free (incoming_str);
     cJSON_Delete (json);
+
+    return result_code;
 }
 
 //  debug: print zyre-event
@@ -350,12 +413,16 @@ uint8_t _appnet_receive_event (appnet_t *self)
 
     if (streq (evt_type, "ENTER")) {
         return_code = appnet_receive_event_enter (self, evt); // process zyre_enter_event
-    } else if (streq (evt_type, "WHISPER")) {
+    } 
+    else if (streq (evt_type, "EXIT")) {
+        return_code = appnet_receive_event_exit (self, evt); // process zyre_whisper_event
+    }    
+    else if (streq (evt_type, "WHISPER")) {
         return_code = appnet_receive_event_whisper (self, evt); // process zyre_whisper_event
     } else {
         return_code = APPNET_TYPE_UNSUPPORTED;
         //fprintf(stderr,"unsupported event-type:%s\n",evt_type);
-        //zyre_event_print (evt);
+        zyre_event_print (evt);
     }
 
     zyre_event_destroy (&evt);
@@ -385,6 +452,16 @@ void
             break;
         }
     }    
+}
+
+//  get client by uuid
+appnet_client_t *
+    appnet_get_remote_client (appnet_t *self, const char *client_uuid)
+{
+    assert(self);
+    assert(client_uuid);
+    appnet_client_t* client = zhash_lookup(self->peers.clients,client_uuid);
+    return client;
 }
 
 //  get application by name
@@ -493,19 +570,19 @@ void on_application_enter (appnet_application_t *app, void *userdata)
 
 void on_action_triggered (const char *action_name,
                           const char *args,
-                          void *triggered_by,
                           uint8_t caller_type,
+                          void *called_by,
                           void *userdata)
 {
     if (caller_type == APPNET_CALLER_TYPE_APPLICATION) {
         printf ("Client[%s|%s] triggered ACTION: %s\n"
-                    ,appnet_application_get_name ((appnet_application_t*)triggered_by)
-                    ,appnet_application_get_peer_id ((appnet_application_t*)triggered_by)
+                    ,appnet_application_get_name ((appnet_application_t*)called_by)
+                    ,appnet_application_get_peer_id ((appnet_application_t*)called_by)
                     ,action_name);
     } else if (caller_type == APPNET_CALLER_TYPE_CLIENT) {
         printf ("Client[%s|%s] triggered ACTION: %s\n"
-                ,appnet_client_get_name ((appnet_client_t*)triggered_by)
-                ,appnet_client_get_peer_id ((appnet_client_t*)triggered_by)
+                ,appnet_client_get_name ((appnet_client_t*)called_by)
+                ,appnet_client_get_peer_id ((appnet_client_t*)called_by)
                 ,action_name);
     }
 }

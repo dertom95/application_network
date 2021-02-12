@@ -49,6 +49,13 @@ void on_app_enter(appnet_application_t* app,void* userdata)
 
 }
 
+void on_app_exit(appnet_application_t* app,void* userdata)
+{
+    const char* app_name = appnet_application_get_name(app);
+    const char* app_uuid = appnet_application_get_peer_id(app);
+    printf("Application EXIT:%s[%s]\n",app_name,app_uuid);
+}
+
 
 int main (int argc, char *argv [])
 {
@@ -80,6 +87,7 @@ int main (int argc, char *argv [])
     appnet_t* node = appnet_new ("node-client");
     appnet_set_timeout(node,10.0f);
     appnet_set_on_app_enter(node,on_app_enter,node);
+    appnet_set_on_app_exit(node,on_app_exit,node);
     
     // set this node to be an application
     appnet_client_t* client = appnet_set_client(node);

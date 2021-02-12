@@ -33,7 +33,19 @@ typedef void (appnet_on_client_enter) (
 
 //
 typedef void (appnet_on_action_triggered) (
-    const char *action_name, const char *args, void *triggered_by_client, uint8_t caller_type, void *userdata);
+    const char *action_name, const char *args, uint8_t caller_type, void *called_by, void *userdata);
+
+//
+typedef void (appnet_on_client_enter) (
+    appnet_client_t *client, void *userdata);
+
+//
+typedef void (appnet_on_client_exit) (
+    appnet_client_t *client, void *userdata);
+
+//
+typedef void (appnet_on_app_exit) (
+    appnet_application_t *client, void *userdata);
 
 //  Appnet
 APPLICATION_NETWORK_EXPORT appnet_t *
@@ -88,13 +100,22 @@ APPLICATION_NETWORK_EXPORT void
 APPLICATION_NETWORK_EXPORT void
     appnet_stop (appnet_t *self);
 
+//  returns info for underlying application or client
+//  Caller owns return value and must destroy it when done.
+APPLICATION_NETWORK_EXPORT char *
+    appnet_node_signature (appnet_t *self);
+
 //  Get underlying zyre-node
 APPLICATION_NETWORK_EXPORT zyre_t *
     appnet_get_zyre_node (appnet_t *self);
 
-//  get application by name
+//  get client by uuid
+APPLICATION_NETWORK_EXPORT appnet_client_t *
+    appnet_get_remote_client (appnet_t *self, const char *client_uuid);
+
+//  get application by uuid
 APPLICATION_NETWORK_EXPORT appnet_application_t *
-    appnet_get_remote_application (appnet_t *self, const char *application_name);
+    appnet_get_remote_application (appnet_t *self, const char *application_uuid);
 
 //  Return all connected applications
 APPLICATION_NETWORK_EXPORT zhash_t *
@@ -111,6 +132,14 @@ APPLICATION_NETWORK_EXPORT void
 //  custom: send buffer(void* size) to application
 APPLICATION_NETWORK_EXPORT void
     appnet_remote_send_buffer (appnet_t *self, const char *peer_id, void *data, size_t size);
+
+//
+APPLICATION_NETWORK_EXPORT void
+    appnet_set_on_client_exit (appnet_t *self, appnet_on_client_exit callback, void *userdata);
+
+//
+APPLICATION_NETWORK_EXPORT void
+    appnet_set_on_app_exit (appnet_t *self, appnet_on_app_exit callback, void *userdata);
 
 //
 APPLICATION_NETWORK_EXPORT void
