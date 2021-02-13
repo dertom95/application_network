@@ -76,6 +76,8 @@ typedef struct _appnet_client_t appnet_client_t;
 #ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
 typedef struct _appnet_msg_t appnet_msg_t;
 #define APPNET_MSG_T_DEFINED
+typedef struct _appnet_view_context_t appnet_view_context_t;
+#define APPNET_VIEW_CONTEXT_T_DEFINED
 #endif // APPLICATION_NETWORK_BUILD_DRAFT_API
 
 //  Public constants
@@ -94,12 +96,16 @@ typedef struct _appnet_msg_t appnet_msg_t;
 #define APPNET_TYPE_CLIENT_EXIT  6             //  client entered network
 #define APPNET_TYPE_UNKNOWN_WHISPER_TYPE  7    //  unknown whisper type
 #define APPNET_TYPE_TRIGGER_ACTION  8          //  trigger action
+#define APPNET_TYPE_SUBSCRIBE_VIEW  9          //  subscribe view
+#define APPNET_TYPE_UNSUBSCRIBE_VIEW  10       //  unsubscribe view
 #ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
 #define APPNET_PROTO_CALLER_APPLICATION  "caller_app"  //  zframe: caller is an application
 #define APPNET_PROTO_CALLER_CLIENT  "caller_client"  //  zframe: caller is a client
 #define APPNET_PROTO_DATA_STRING  "string_data"  //
 #define APPNET_PROTO_DATA_BUFFER  "buffer_data"  //
 #define APPNET_MSG_TRIGGER_ACTION  "trigger_action"  //
+#define APPNET_MSG_SUBSCRIBE_VIEW  "subscribe_view"  //
+#define APPNET_MSG_UNSUBSCRIBE_VIEW  "unsubscribe_view"  //
 #endif // APPLICATION_NETWORK_BUILD_DRAFT_API
 
 //  Public classes, each with its own header file
@@ -108,6 +114,7 @@ typedef struct _appnet_msg_t appnet_msg_t;
 #include "appnet_client.h"
 #ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
 #include "appnet_msg.h"
+#include "appnet_view_context.h"
 #endif // APPLICATION_NETWORK_BUILD_DRAFT_API
 
 #ifdef APPLICATION_NETWORK_BUILD_DRAFT_API

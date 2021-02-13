@@ -1,25 +1,3 @@
-<!--
-    appnet_msg - work with appnet messages
-
-    Codec class for appnet_msg.
-
-    ** WARNING *************************************************************
-    THIS SOURCE FILE IS 100% GENERATED. If you edit this file, you will lose
-    your changes at the next build cycle. This is great for temporary printf
-    statements. DO NOT MAKE ANY CHANGES YOU WISH TO KEEP. The correct places
-    for commits are:
-
-     * The XML model used for this code generation: appnet_msg.xml, or
-     * The code generation script that built this file: zproto_codec_c
-    ************************************************************************
-    Copyright (c) 2021 the Contributors as noted in the AUTHORS file.
-
-    This file is part of application-network, an open-source framework for connecting application and viewers p2p
-
-    This Source Code Form is subject to the terms of the Mozilla Public
-    License, v. 2.0. If a copy of the MPL was not distributed with this
-    file, You can obtain one at http://mozilla.org/MPL/2.0/.
- -->
 <class name = "appnet_msg">
 
 <method name = "create_trigger_action" singleton="1">
@@ -40,6 +18,14 @@
     <return type="zmsg" fresh="1"/>
 </method>
 
+
+<method name = "create_generic_string_list_message" singleton="1">
+    Create a generic zmsg with multiple strings packed as individual zframes.
+    <argument name = "msg_type" type="string"/>
+    <argument name = "amount" type="number"/>
+    <argument name = "string_data" type="string" variadic="1"/>
+    <return type="zmsg" fresh="1"/>
+</method>
 
 </class>
 

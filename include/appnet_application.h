@@ -35,6 +35,10 @@ APPLICATION_NETWORK_EXPORT appnet_application_t *
 APPLICATION_NETWORK_EXPORT void
     appnet_application_destroy (appnet_application_t **self_p);
 
+//  check if views needs to trigger and call the callback
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_process_views (appnet_application_t *self);
+
 //  get application name
 APPLICATION_NETWORK_EXPORT const char *
     appnet_application_get_name (appnet_application_t *self);
@@ -67,6 +71,14 @@ APPLICATION_NETWORK_EXPORT bool
 APPLICATION_NETWORK_EXPORT void
     appnet_application_add_views (appnet_application_t *self, uint8_t view_amount, const char *view, ...);
 
+//  add this user(peer-id) to be subscriber on the specified view
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_add_subscriber (appnet_application_t *self, const char *viewname, const char *peer_id);
+
+//  remove this user(peer-id) from subscriber-list of the specified view
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_remove_subscriber (appnet_application_t *self, const char *viewname, const char *peer_id);
+
 //  get zlist of all views
 APPLICATION_NETWORK_EXPORT zlist_t *
     appnet_application_get_view_list (appnet_application_t *self);
@@ -86,6 +98,10 @@ APPLICATION_NETWORK_EXPORT void
 //  remote: subscribe for this application's view
 APPLICATION_NETWORK_EXPORT void
     appnet_application_remote_subscribe_view (appnet_application_t *self, const char *view_name);
+
+//  subscribe to multiple views on this application
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_remote_subscribe_views (appnet_application_t *self, uint8_t view_amount, const char *views, ...);
 
 //  remote: unsubscribe from specified view
 APPLICATION_NETWORK_EXPORT void

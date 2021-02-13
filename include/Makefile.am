@@ -11,7 +11,8 @@ include_HEADERS = \
 
 if ENABLE_DRAFTS
 include_HEADERS += \
-    appnet_msg.h
+    appnet_msg.h \
+    appnet_view_context.h
 
 endif
 

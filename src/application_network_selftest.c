@@ -38,6 +38,7 @@ all_tests [] = {
 #ifdef APPLICATION_NETWORK_BUILD_DRAFT_API
 // Tests for draft public classes:
     { "appnet_msg", appnet_msg_test, false, true, NULL },
+    { "appnet_view_context", appnet_view_context_test, false, true, NULL },
 #endif // APPLICATION_NETWORK_BUILD_DRAFT_API
     {NULL, NULL, 0, 0, NULL}          //  Sentinel
 };

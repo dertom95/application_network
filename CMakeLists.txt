@@ -215,6 +215,7 @@ set (application_network_headers
 IF (ENABLE_DRAFTS)
     list(APPEND application_network_headers
         include/appnet_msg.h
+        include/appnet_view_context.h
     )
 ENDIF (ENABLE_DRAFTS)
 
@@ -236,6 +237,7 @@ set (application_network_sources
 IF (ENABLE_DRAFTS)
     list (APPEND application_network_sources
         src/appnet_msg.c
+        src/appnet_view_context.c
     )
 ENDIF (ENABLE_DRAFTS)
 
@@ -509,6 +511,7 @@ set(TEST_CLASSES
 IF (ENABLE_DRAFTS)
     list (APPEND TEST_CLASSES
     appnet_msg
+    appnet_view_context
     )
 ENDIF (ENABLE_DRAFTS)
 

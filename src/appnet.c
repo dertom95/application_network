@@ -327,7 +327,7 @@ uint8_t appnet_receive_event_exit (appnet_t *self, zyre_event_t *evt)
             if (self->on_app_exit){
                 self->on_app_exit(app,self->on_client_exit_userdata);
             }
-            // remove app from peers-hashtable and destory object
+            // remove app from peers-hashtable and destroy object
             zhash_delete(self->peers.applications, peer_id);
             appnet_application_destroy(&app);
             result_code = APPNET_TYPE_APPLICATION_EXIT;
@@ -338,26 +338,111 @@ uint8_t appnet_receive_event_exit (appnet_t *self, zyre_event_t *evt)
     return result_code;
 }
 
+// handle whisper-TRIGGER-ACTION
+uint8_t appnet_receive_whisper_trigger_action(appnet_t* self,zmsg_t* msg,uint8_t caller_type,void* caller)
+{
+    assert(self);
+    assert(msg);
+    assert(caller);
+
+    if (!appnet_is_application(self)){
+        return APPNET_TYPE_UNSUPPORTED; // only applications can trigger actions
+    }
+
+
+    char *action_name = zmsg_popstr(msg);
+
+    // TODO - Check if action exists
+
+    char *argument_data_type = zmsg_popstr(msg);
+    
+    int result_code = APPNET_TYPE_UNSUPPORTED;
+
+    if (self->on_action_triggered 
+            && streq(argument_data_type,APPNET_PROTO_DATA_STRING)
+    ){
+        char *action_args = zmsg_popstr(msg);
+
+        self->on_action_triggered (action_name
+                                    ,action_args
+                                    ,caller_type
+                                    ,caller
+                                    ,self->on_action_triggered_userdata);
+
+        free(action_args);
+        result_code = APPNET_TYPE_TRIGGER_ACTION;   
+    }
+    else if (self->on_action_triggered_data 
+                &&streq(argument_data_type,APPNET_PROTO_DATA_BUFFER)
+    ){
+        zframe_t* frame = zmsg_pop(msg);
+        size_t size = zframe_size(frame);
+        void* dest = malloc(size);
+        memcpy(dest,zframe_data(frame),size);
+        zframe_destroy(&frame);
+
+        self->on_action_triggered_data (action_name
+                                    ,dest
+                                    ,size
+                                    ,caller_type
+                                    ,caller
+                                    ,self->on_action_triggered_data_userdata);                
+        result_code = APPNET_TYPE_TRIGGER_ACTION;   
+    }
+    free(action_name);
+    free(argument_data_type);
+
+    return result_code; 
+}
+
+// --- whisper - SUBSCRIBE-VIEW
+uint8_t appnet_receive_whisper_subscribe_view(appnet_t* self,zmsg_t* msg,const char* peer_id,bool subscribe)
+{
+    assert(self);
+    assert(msg);
+    assert(peer_id);
+
+    if (!appnet_is_application(self)){
+        return APPNET_TYPE_UNSUPPORTED; // only applications can use receive subscribe-view
+    }
+
+    appnet_application_t* app = appnet_get_application(self);
+
+    const char* view_name = NULL;
+    while ((view_name = zmsg_popstr(msg))){
+        // TODO: check if view exists
+        if (subscribe) {
+            appnet_application_add_subscriber(app,view_name,peer_id);
+        } else {
+            appnet_application_remove_subscriber(app,view_name,peer_id);
+        }
+        free(view_name);
+    }
+    return subscribe 
+                ? APPNET_TYPE_SUBSCRIBE_VIEW
+                : APPNET_TYPE_UNSUBSCRIBE_VIEW;
+}
+
 uint8_t appnet_receive_event_whisper (appnet_t *self, zyre_event_t *evt)
 {
     assert (self);
     assert (evt);
 
-    const char *client_uuid = zyre_event_peer_uuid (evt);
-    assert (client_uuid);
-    appnet_client_t *client = zhash_lookup (self->peers.clients, client_uuid);
+    const char *peer_id = zyre_event_peer_uuid (evt);
+    assert (peer_id);
+    appnet_client_t *caller = zhash_lookup (self->peers.clients, peer_id);
 
     uint8_t caller_type = APPNET_CALLER_TYPE_CLIENT;
 
-    if (!client) {
+    if (!caller) {
         // no client, look in app-list
-        client = zhash_lookup (self->peers.applications, client_uuid);
+        caller = zhash_lookup (self->peers.applications, peer_id);
 
-        if (!client) {
+        if (!caller) {
             fprintf (
               stderr,
               "couldn't find client(zyre-node with uuid:%s) ignoring event\n",
-              client_uuid);
+              peer_id);
             zyre_event_print (evt);
             return APPNET_TYPE_UNKNOWN_PEER;
         }
@@ -368,47 +453,18 @@ uint8_t appnet_receive_event_whisper (appnet_t *self, zyre_event_t *evt)
 
     char *whisper_type = zmsg_popstr(msg);
 
-
     int result_code = APPNET_TYPE_UNKNOWN_WHISPER_TYPE;
 
     if (streq (whisper_type, APPNET_MSG_TRIGGER_ACTION)) {
-        char *action_name = zmsg_popstr(msg);
-
-        char *argument_data_type = zmsg_popstr(msg);
-                        
-        if (self->on_action_triggered 
-                && streq(argument_data_type,APPNET_PROTO_DATA_STRING)
-        ){
-            char *action_args = zmsg_popstr(msg);
-
-            self->on_action_triggered (action_name
-                                        ,action_args
-                                        ,caller_type
-                                        ,client
-                                        ,self->on_action_triggered_userdata);
-
-            free(action_args);
-        }
-        else if (self->on_action_triggered_data 
-                    &&streq(argument_data_type,APPNET_PROTO_DATA_BUFFER)
-        ){
-            zframe_t* frame = zmsg_pop(msg);
-            size_t size = zframe_size(frame);
-            void* dest = malloc(size);
-            memcpy(dest,zframe_data(frame),size);
-            zframe_destroy(&frame);
-
-            self->on_action_triggered_data (action_name
-                                        ,dest
-                                        ,size
-                                        ,caller_type
-                                        ,client
-                                        ,self->on_action_triggered_data_userdata);                
-        }
-        free(action_name);
-        free(argument_data_type);
-        result_code = APPNET_TYPE_TRIGGER_ACTION;
-    } else {
+        result_code = appnet_receive_whisper_trigger_action(self,msg,caller_type,caller);
+    } 
+    else if (streq (whisper_type, APPNET_MSG_SUBSCRIBE_VIEW)) {
+        result_code = appnet_receive_whisper_subscribe_view(self,msg,peer_id,true); // subscribe
+    } 
+    else if (streq (whisper_type, APPNET_MSG_UNSUBSCRIBE_VIEW)) {
+        result_code = appnet_receive_whisper_subscribe_view(self,msg,peer_id,false); // unsubscribe
+    } 
+    else {
         fprintf (stderr, "unsupported WHISPER-Type:%s", whisper_type);
         zyre_event_print (evt);
     }

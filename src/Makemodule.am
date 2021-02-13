@@ -20,7 +20,8 @@ src_libapplication_network_la_SOURCES = \
 
 if ENABLE_DRAFTS
 src_libapplication_network_la_SOURCES += \
-    src/appnet_msg.c
+    src/appnet_msg.c \
+    src/appnet_view_context.c
 
 endif
 
@@ -77,7 +78,8 @@ dist_api_DATA = \
     api/appnet.api \
     api/appnet_application.api \
     api/appnet_client.api \
-    api/appnet_msg.api
+    api/appnet_msg.api \
+    api/appnet_view_context.api
 
 # define custom target for all products of /src
 src: \
@@ -188,6 +190,13 @@ check-appnet_msg-verbose: src/application_network_selftest $(top_builddir)/$(SEL
 	$(LIBTOOL) --mode=execute $(builddir)/src/application_network_selftest -v -t appnet_msg
 	$(MAKE) check-empty-selftest-rw
 
+check-appnet_view_context: src/application_network_selftest $(top_builddir)/$(SELFTEST_DIR_RW) $(top_builddir)/$(SELFTEST_DIR_RO)
+	$(LIBTOOL) --mode=execute $(builddir)/src/application_network_selftest -t appnet_view_context
+	$(MAKE) check-empty-selftest-rw
+check-appnet_view_context-verbose: src/application_network_selftest $(top_builddir)/$(SELFTEST_DIR_RW) $(top_builddir)/$(SELFTEST_DIR_RO)
+	$(LIBTOOL) --mode=execute $(builddir)/src/application_network_selftest -v -t appnet_view_context
+	$(MAKE) check-empty-selftest-rw
+
 
 # Run the selftest binary under valgrind to check for memory leaks
 memcheck: src/application_network_selftest $(top_builddir)/$(SELFTEST_DIR_RW) $(top_builddir)/$(SELFTEST_DIR_RO)
@@ -262,6 +271,20 @@ memcheck-appnet_msg-verbose: src/application_network_selftest $(top_builddir)/$(
 		$(VALGRIND_OPTIONS) \
 		$(builddir)/src/application_network_selftest -v -t appnet_msg
 	$(MAKE) check-empty-selftest-rw
+memcheck-appnet_view_context: src/application_network_selftest $(top_builddir)/$(SELFTEST_DIR_RW) $(top_builddir)/$(SELFTEST_DIR_RO)
+	$(LIBTOOL) --mode=execute valgrind --tool=memcheck \
+		--leak-check=full --show-reachable=yes --error-exitcode=1 \
+		--suppressions=$(srcdir)/src/.valgrind.supp \
+		$(VALGRIND_OPTIONS) \
+		$(builddir)/src/application_network_selftest -t appnet_view_context
+	$(MAKE) check-empty-selftest-rw
+memcheck-appnet_view_context-verbose: src/application_network_selftest $(top_builddir)/$(SELFTEST_DIR_RW) $(top_builddir)/$(SELFTEST_DIR_RO)
+	$(LIBTOOL) --mode=execute valgrind --tool=memcheck \
+		--leak-check=full --show-reachable=yes --error-exitcode=1 \
+		--suppressions=$(srcdir)/src/.valgrind.supp \
+		$(VALGRIND_OPTIONS) \
+		$(builddir)/src/application_network_selftest -v -t appnet_view_context
+	$(MAKE) check-empty-selftest-rw
 
 # Run the selftest binary under valgrind to check for performance leaks
 callcheck: src/application_network_selftest $(top_builddir)/$(SELFTEST_DIR_RW) $(top_builddir)/$(SELFTEST_DIR_RO)
@@ -316,6 +339,16 @@ callcheck-appnet_msg-verbose: src/application_network_selftest $(top_builddir)/$
 		$(VALGRIND_OPTIONS) \
 		$(builddir)/src/application_network_selftest -v -t appnet_msg
 	$(MAKE) check-empty-selftest-rw
+callcheck-appnet_view_context: src/application_network_selftest $(top_builddir)/$(SELFTEST_DIR_RW) $(top_builddir)/$(SELFTEST_DIR_RO)
+	$(LIBTOOL) --mode=execute valgrind --tool=callgrind \
+		$(VALGRIND_OPTIONS) \
+		$(builddir)/src/application_network_selftest -t appnet_view_context
+	$(MAKE) check-empty-selftest-rw
+callcheck-appnet_view_context-verbose: src/application_network_selftest $(top_builddir)/$(SELFTEST_DIR_RW) $(top_builddir)/$(SELFTEST_DIR_RO)
+	$(LIBTOOL) --mode=execute valgrind --tool=callgrind \
+		$(VALGRIND_OPTIONS) \
+		$(builddir)/src/application_network_selftest -v -t appnet_view_context
+	$(MAKE) check-empty-selftest-rw
 
 # Run the selftest binary under gdb for debugging
 debug: src/application_network_selftest $(top_builddir)/$(SELFTEST_DIR_RW) $(top_builddir)/$(SELFTEST_DIR_RO)
@@ -359,6 +392,14 @@ debug-appnet_msg: src/application_network_selftest $(top_builddir)/$(SELFTEST_DI
 debug-appnet_msg-verbose: src/application_network_selftest $(top_builddir)/$(SELFTEST_DIR_RW) $(top_builddir)/$(SELFTEST_DIR_RO)
 	$(LIBTOOL) --mode=execute gdb -q \
 		--args $(builddir)/src/application_network_selftest -v -t appnet_msg
+	$(MAKE) check-empty-selftest-rw
+debug-appnet_view_context: src/application_network_selftest $(top_builddir)/$(SELFTEST_DIR_RW) $(top_builddir)/$(SELFTEST_DIR_RO)
+	$(LIBTOOL) --mode=execute gdb -q \
+		--args $(builddir)/src/application_network_selftest -t appnet_view_context
+	$(MAKE) check-empty-selftest-rw
+debug-appnet_view_context-verbose: src/application_network_selftest $(top_builddir)/$(SELFTEST_DIR_RW) $(top_builddir)/$(SELFTEST_DIR_RO)
+	$(LIBTOOL) --mode=execute gdb -q \
+		--args $(builddir)/src/application_network_selftest -v -t appnet_view_context
 	$(MAKE) check-empty-selftest-rw
 
 # Run the selftest binary with verbose switch for tracing

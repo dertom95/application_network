@@ -123,6 +123,11 @@ void on_client_exit(appnet_client_t* client,void* userdata)
     free(signature);
 }
 
+// --------------------------------------------
+// --------------------------------------------
+// --             HELPERS                    --
+// --------------------------------------------
+// --------------------------------------------
 
 appnet_t* create_client_node(const char* name){
     appnet_t* client_node = appnet_new(name);
@@ -152,6 +157,9 @@ void add_default_callbacks(appnet_t* node){
     appnet_set_on_action_triggered_data(node,on_action_triggered_data,node);
 }
 
+// ------------
+// nested logic
+// ------------
 bool test_trigger_string_argument(appnet_t* app,appnet_t* client)
 {
     zlist_t* app_names = appnet_get_remote_application_names(client);
@@ -182,6 +190,29 @@ bool test_trigger_data_argument(appnet_t* app,appnet_t* client)
     return true;
 }
 
+bool test_subscribe_multiple(appnet_t* app,appnet_t* client)
+{
+    // get first application
+    zlist_t* app_names = appnet_get_remote_application_names(client);
+    appnet_application_t* remote_app = appnet_get_remote_application(client,zlist_first(app_names));
+
+    // client sends view-request
+//    appnet_application_remote_subscribe_view(remote_app,"globals.resources");
+    appnet_application_remote_subscribe_views(remote_app,2,"globals.resources","view1");
+    int rc = appnet_receive_event(app);
+    assert(rc==APPNET_TYPE_SUBSCRIBE_VIEW);
+
+    appnet_application_remote_unsubscribe_view(remote_app,"globals.resources");
+    rc = appnet_receive_event(app);
+    assert(rc==APPNET_TYPE_UNSUBSCRIBE_VIEW);
+
+
+    return true;
+}
+
+// ---------------------------
+// default test with two nodes
+// ---------------------------
 int test_enter_exit(two_node_logic* inner_logic) {
     // create client-node
     appnet_t* client_node_1 = create_client_node("client_1");
@@ -249,7 +280,8 @@ int main (int argc, char *argv [])
 
   //  test_enter_exit(NULL); // start / stop
 //    test_enter_exit(test_trigger_string_argument); // start / trigger-string / stop
-    test_enter_exit(test_trigger_data_argument); // start / trigger-string / stop
+    //test_enter_exit(test_trigger_data_argument); // start / trigger-string / stop
+    test_enter_exit(test_subscribe_multiple);
 
     return 0;
 }

@@ -27,6 +27,7 @@
     <class name = "appnet_application"/>
     <class name = "appnet_client"/>
     <class name = "appnet_msg"/>
+    <class name = "appnet_view_context"/>
 
     <!-- <actor name = "appnet_actor">The appnet-actor</actor> -->
 
@@ -56,7 +57,8 @@
     <constant name = "APPNET_PROTO_DATA_BUFFER" type="string" value="buffer_data"/>
 
     <constant name = "APPNET_MSG_TRIGGER_ACTION" type="string" value="trigger_action"/>
-
+    <constant name = "APPNET_MSG_SUBSCRIBE_VIEW" type="string" value="subscribe_view"/>
+    <constant name = "APPNET_MSG_UNSUBSCRIBE_VIEW" type="string" value="unsubscribe_view"/>
 
     <constant name = "APPNET_TYPE_TIMEOUT" value="0" state="stable">timeout</constant>
     <constant name = "APPNET_TYPE_UNSUPPORTED" value="1"  state="stable">unsupported event</constant>
@@ -67,6 +69,8 @@
     <constant name = "APPNET_TYPE_CLIENT_EXIT" value="6"  state="stable">client entered network</constant>
     <constant name = "APPNET_TYPE_UNKNOWN_WHISPER_TYPE" value="7"  state="stable">unknown whisper type</constant>
     <constant name = "APPNET_TYPE_TRIGGER_ACTION" value="8"  state="stable">trigger action</constant>
+    <constant name = "APPNET_TYPE_SUBSCRIBE_VIEW" value="9"  state="stable">subscribe view</constant>
+    <constant name = "APPNET_TYPE_UNSUBSCRIBE_VIEW" value="10"  state="stable">unsubscribe view</constant>
     <!-- <constant name = "ZRE_DISCOVERY_PORT" value = "5670" state = "stable">IANA-assigned UDP port for ZRE</constant>
     <constant name = "REAP_INTERVAL" value = "1000" private = "1" >Once per second</constant>
     <constant name = "ZAP_DOMAIN_DEFAULT" value = "global" state = "draft" type = "string">Default ZAP domain (auth)</constant> -->

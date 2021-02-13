@@ -52,6 +52,8 @@
 #define APPNET_PROTO_DATA_STRING  "string_data"  //
 #define APPNET_PROTO_DATA_BUFFER  "buffer_data"  //
 #define APPNET_MSG_TRIGGER_ACTION  "trigger_action"  //
+#define APPNET_MSG_SUBSCRIBE_VIEW  "subscribe_view"  //
+#define APPNET_MSG_UNSUBSCRIBE_VIEW  "unsubscribe_view"  //
 
 //  Self test for private classes
 APPLICATION_NETWORK_PRIVATE void

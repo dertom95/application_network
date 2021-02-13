@@ -1,0 +1,62 @@
+<class name = "appnet_view_context">
+
+    <constructor>
+        <argument name="viewname" type="string"/>
+    </constructor>
+
+    <destructor/>
+
+
+    <method name="viewname">
+        Get name of this view
+        <return type="string"/>
+    </method>
+
+
+    <method name="next_triggertime">
+        Get time this view is going to triggered (in ms)
+        <return type="number" size="8"/>
+    </method>
+
+    <method name="set_interval">
+        Set interval for this view (in milliseconds)
+        <argument name="interval_in_ms" type="integer"/>
+    </method>
+
+    <method name="userdata">
+        Get userdata
+        <return type="anything"/>
+    </method>
+
+    <method name="set_userdata">
+        set userdata
+        <argument name="userdata" type="anything"/>
+    </method>
+
+    <method name="add_subscriber">
+        set this user(peer-id) to be subscriber
+        <argument name="peer_id" type="string"/>
+    </method>
+
+    <method name="remove_subscriber">
+        remove this user(peer-id) from subscriber-list
+        <argument name="peer_id" type="string"/>
+    </method>
+
+    <method name="get_subscriber_map">
+        Get the hashtable of all subscrbiers on this view
+        <return type="zhash"/>
+    </method>
+
+    <method name="get_amount_subscribers">
+        Get amount of subscribers
+        <return type="integer"/>
+    </method>
+    
+    <method name="prepare_next_interval">
+        Setup data for next interval
+    </method>
+
+</class>
+
+

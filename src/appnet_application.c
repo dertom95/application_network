@@ -21,16 +21,17 @@
 #include "application_network_classes.h"
 
 #include <zlist.h>
+#include <zclock.h>
 
 //  Structure of our class
 
 struct _appnet_application_t {
-    zlist_t* views;
+    zhash_t* views;
     zlist_t* actions;
     char* name;
     char* peer_id;
     bool remote;
-
+    int view_interval;
     appnet_t* parent;
 };
 
@@ -45,7 +46,7 @@ appnet_application_new (appnet_t* parent)
     assert (self);
     //  Initialize class properties here
     self->actions = zlist_new();
-    self->views = zlist_new();
+    self->views = zhash_new();
     self->remote = false;
     self->parent = parent;
 
@@ -53,7 +54,15 @@ appnet_application_new (appnet_t* parent)
     const char* peer_id = zyre_uuid(zyre_node);
     STRCPY(self->peer_id,peer_id);
 
+
     return self;
+}
+
+static void
+s_delete_view_ctx (void *argument)
+{
+    appnet_view_context_t *view_ctx = (appnet_view_context_t *) argument;
+    appnet_view_context_destroy (&view_ctx);
 }
 
 appnet_application_t *
@@ -83,12 +92,13 @@ appnet_application_t *
     if (cJSON_IsArray(json_views)){
         int size = cJSON_GetArraySize(json_views);
         if (size>0){
-            self->views = zlist_new();
-            zlist_autofree(self->views);
+            self->views = zhash_new();
             for (int i=0;i<size;i++){
                 cJSON* json_view = cJSON_GetArrayItem(json_views,i);
                 char* view_name = cJSON_GetStringValue(json_view);
-                zlist_append(self->views,(void*)view_name);
+                appnet_view_context_t* view_ctx = appnet_view_context_new(view_name);
+                zhash_insert(self->views,view_name,view_ctx);
+                zhash_freefn(self->views,view_name,s_delete_view_ctx);
             }
         }
     }
@@ -131,7 +141,7 @@ appnet_application_destroy (appnet_application_t **self_p)
     if (*self_p) {
         appnet_application_t *self = *self_p;
 
-        zlist_destroy(&self->views);
+        zhash_destroy(&self->views);
         zlist_destroy(&self->actions);
 
         STRFREE(self->name);
@@ -150,6 +160,13 @@ appnet_t *
 {
     assert(self);
     return self->parent;
+}
+
+//  check if views needs to trigger and call the callback
+void
+    appnet_application_process_views (appnet_application_t *self)
+{
+    // TODO
 }
 
 // get application name
@@ -186,7 +203,11 @@ bool
 {
     assert(self);
     assert(self->views);
-    int rc = zlist_append(self->views,(void*)viewname);
+
+    appnet_view_context_t* view_ctx = appnet_view_context_new(viewname);
+    int rc = zhash_insert(self->views,viewname,view_ctx);
+    zhash_freefn(self->views,viewname,s_delete_view_ctx);
+
     return rc == 0;
 }
 
@@ -212,7 +233,7 @@ zlist_t *
 {
     assert(self);
     assert(self->views);
-    return self->views;
+    return zhash_keys(self->views);
 }
 
 //  add application action ( appnet needs to be set as application-type )
@@ -238,7 +259,7 @@ void
         appnet_application_add_action(self,action);
         action = va_arg (args, const char*);
     }
-    va_end(args);    
+    va_end(args); 
 }    
 
 
@@ -251,6 +272,33 @@ zlist_t *
     return self->actions;
 }
 
+//  add this user(peer-id) to be subscriber on the specified view
+void
+    appnet_application_add_subscriber (appnet_application_t *self, const char *viewname, const char *peer_id)
+{
+    assert(self);
+    assert(viewname);
+    assert(peer_id);
+
+    appnet_view_context_t* view_ctx = zhash_lookup(self->views,viewname);
+    assert(view_ctx);
+    appnet_view_context_add_subscriber(view_ctx,peer_id);
+}
+
+//  remove this user(peer-id) from subscriber-list of the specified view
+void
+    appnet_application_remove_subscriber (appnet_application_t *self, const char *viewname, const char *peer_id)
+{
+    assert(self);
+    assert(viewname);
+    assert(peer_id);
+
+    appnet_view_context_t* view_ctx = zhash_lookup(self->views,viewname);
+    assert(view_ctx);
+    appnet_view_context_remove_subscriber(view_ctx,peer_id);
+}
+
+
 //  get application meta data as string-json
 char *
     appnet_application_to_metadata_json_string (appnet_application_t *self)
@@ -260,10 +308,11 @@ char *
     cJSON_AddStringToObject(json_meta_header,"name",self->name);
 
     cJSON* json_views = cJSON_CreateArray();
-    for(void* ptr=zlist_first(self->views);ptr!=NULL;){
+    zlist_t* view_keys = zhash_keys(self->views);
+    for(void* ptr=zlist_first(view_keys);ptr!=NULL;){
         cJSON* json_view = cJSON_CreateString((char*)ptr);            
         cJSON_AddItemToArray(json_views,json_view);
-        ptr=zlist_next(self->views);
+        ptr=zlist_next(view_keys);
     }
     cJSON_AddItemToObject(json_meta_header,"views",json_views);
     
@@ -307,31 +356,53 @@ void appnet_application_print(appnet_application_t* app){
     }    
 }
 
-// remote calls 
+// --------------------------------------------------------------------------------------
+// --                                     remote calls                                 --
+// --------------------------------------------------------------------------------------
+
+void whisper_to_app(appnet_application_t* self,zmsg_t* msg)
+{
+    zyre_t* zyre = appnet_get_zyre_node(self->parent);
+    zyre_whisper(zyre,self->peer_id,&msg);    
+}
 
 //  remote: subscribe for this application's view
 void
     appnet_application_remote_subscribe_view (appnet_application_t *self, const char *view_name)
-{}
+{
+    zmsg_t* msg = appnet_msg_create_generic_string_list_message(APPNET_MSG_SUBSCRIBE_VIEW,1,view_name);
+    whisper_to_app(self,msg);
+}
+
+//  subscribe to multiple views on this application
+void
+    appnet_application_remote_subscribe_views (appnet_application_t *self, uint8_t view_amount, const char *views, ...)
+{
+    zmsg_t* msg = appnet_msg_create_generic_string_list_message(APPNET_MSG_SUBSCRIBE_VIEW,view_amount,views);
+    whisper_to_app(self,msg);
+}
 
 //  remote: unsubscribe from specified view
 void
     appnet_application_remote_unsubscribe_view (appnet_application_t *self, const char *view_name)
-{}
+{
+    zmsg_t* msg = appnet_msg_create_generic_string_list_message(APPNET_MSG_UNSUBSCRIBE_VIEW,1,view_name);
+    whisper_to_app(self,msg);
+}
 
 //  remote: unsubscribe from all views of this application
 void
     appnet_application_remote_unsubscribe_all (appnet_application_t *self)
-{}
+{
+    // TODO
+}
 
 //  remote: trigger action (string)
 void
     appnet_application_remote_trigger_action (appnet_application_t *self, const char *action_name, const char *args)
 {
     zmsg_t* msg = appnet_msg_create_trigger_action(action_name,args);
-    
-    zyre_t* zyre = appnet_get_zyre_node(self->parent);
-    zyre_whisper(zyre,self->peer_id,&msg);
+    whisper_to_app(self,msg);
 }
 
 //  remote: trigger action (data-buffer-argument)
@@ -339,10 +410,9 @@ void
     appnet_application_remote_trigger_action_data (appnet_application_t *self, const char *action_name, void *data, size_t size)
 {
     zmsg_t* msg = appnet_msg_create_trigger_action_data(action_name,data,size);
-    
-    zyre_t* zyre = appnet_get_zyre_node(self->parent);
-    zyre_whisper(zyre,self->peer_id,&msg);
+    whisper_to_app(self,msg);
 }
+
 
 
 //  --------------------------------------------------------------------------

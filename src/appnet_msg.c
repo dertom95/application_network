@@ -78,6 +78,25 @@ zmsg_t *
     return msg;
 }
 
+//  Create a generic zmsg with multiple strings packed as individual zframes.(Order needs to be other way around)
+//  Caller owns return value and must destroy it when done.
+zmsg_t *
+    appnet_msg_create_generic_string_list_message (const char *msg_type, uint8_t amount, const char *string_data, ...)
+{
+    zmsg_t* msg = zmsg_new();
+    zmsg_addstr(msg,msg_type);
+    va_list args;
+    va_start(args,string_data);
+    for (int i=0;i<amount;i++){
+        zmsg_addstr(msg,string_data);
+        string_data = va_arg(args,const char*);
+    }
+    va_end(args);
+    return msg;
+}
+
+
+
 //  Create trigger action msg (as json)
 // char *
 //     appnet_msg_create_trigger_action (const char *action_name,const char *args)

@@ -38,6 +38,12 @@ APPLICATION_NETWORK_EXPORT zmsg_t *
     appnet_msg_create_trigger_action_data (const char *action_name, void *data, size_t size);
 
 //  *** Draft method, for development use, may change without warning ***
+//  Create a generic zmsg with multiple strings packed as individual zframes.
+//  Caller owns return value and must destroy it when done.
+APPLICATION_NETWORK_EXPORT zmsg_t *
+    appnet_msg_create_generic_string_list_message (const char *msg_type, uint8_t amount, const char *string_data, ...);
+
+//  *** Draft method, for development use, may change without warning ***
 //  Self test of this class.
 APPLICATION_NETWORK_EXPORT void
     appnet_msg_test (bool verbose);

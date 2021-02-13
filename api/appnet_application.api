@@ -11,6 +11,10 @@
 
     <destructor/>
 
+    <method name ="process_views">
+        check if views needs to trigger and call the callback
+    </method>
+
     <method name = "get_name">
         get application name
         <return type="string"/>
@@ -53,6 +57,18 @@
         <argument name = "view" type = "string" variadic = "1" />
     </method>
 
+    <method name="add_subscriber">
+        add this user(peer-id) to be subscriber on the specified view
+        <argument name="viewname" type="string"/>
+        <argument name="peer_id" type="string"/>
+    </method>
+
+    <method name="remove_subscriber">
+        remove this user(peer-id) from subscriber-list of the specified view
+        <argument name="viewname" type="string"/>
+        <argument name="peer_id" type="string"/>
+    </method>
+
     <method name = "get_view_list">
         get zlist of all views
         
@@ -78,10 +94,18 @@
         <argument name = "action" type = "string" variadic = "1" />
     </method>    
 
-    <!-- remote - actions -->
+<!-- remote - actions -->
+<!-- remote - actions -->
+<!-- remote - actions -->
     <method name = "remote_subscribe_view">
         remote: subscribe for this application's view
         <argument name = "view_name" type="string"/>
+    </method>
+
+    <method name = "remote_subscribe_views">
+        subscribe to multiple views on this application
+        <argument name = "view_amount" type="number" />
+        <argument name = "views" type="string" variadic="1"/>
     </method>
 
     <method name = "remote_unsubscribe_view">
@@ -105,6 +129,8 @@
         <argument name = "data" type="anything"/>
         <argument name = "size" type="size"/>
     </method>
+
+
 
     <method name = "to_metadata_json_string">
         get application meta data a string-json
