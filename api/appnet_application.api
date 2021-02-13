@@ -11,10 +11,6 @@
 
     <destructor/>
 
-    <method name ="process_views">
-        check if views needs to trigger and call the callback
-    </method>
-
     <method name = "get_name">
         get application name
         <return type="string"/>
@@ -69,10 +65,15 @@
         <argument name="peer_id" type="string"/>
     </method>
 
-    <method name = "get_view_list">
-        get zlist of all views
+    <method name = "get_view_keys">
+        get zlist of all views-keys
         
         <return type = "zlist"/>
+    </method>
+
+    <method name = "get_view_hashtable">
+        return the view-hashtable
+        <return type = "zhash"/>
     </method>
 
     <method name = "get_action_list">

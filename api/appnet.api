@@ -44,6 +44,10 @@
         <return type = "appnet_client"/>
     </method>    
 
+    <method name ="process_views">
+        check if views needs to trigger and call the callback
+    </method>
+
     <method name="receive_event">
         Try to receive message. Or none if timeouted...(return type 0)
         This method will call appropriate callbacks
@@ -97,20 +101,38 @@
     </method>
 
     <method name = "remote_send_string">
-        custom: send string to application
-        <argument name = "peer_id" type="string"/>
+        custom: send string to application.
+        if to_peer=true: data is whispered to get_peer_id
+        if to_peer=false: data is shouted in group
+        <argument name = "to_peer" type="boolean"/>
+        <argument name = "recipent" type="string"/>
         <argument name = "string_data" type="string"/>
     </method>
 
     <method name = "remote_send_buffer">
         custom: send buffer(void* size) to application
-        <argument name = "peer_id" type="string"/>
+        if to_peer=true: data is whispered to get_peer_id
+        if to_peer=false: data is shouted in group
+        <argument name = "to_peer" type="boolean"/>
+        <argument name = "recipent" type="string"/>
         <argument name = "data" type="anything"/>
         <argument name = "size" type="size"/>
-    </method>    
-
+    </method>  
 
     <!-- Callbacks -->
+
+    <callback_type name = "on_view_request">
+       <argument name = "application" type = "appnet_application" />
+       <argument name = "view_context" type = "appnet_view_context"/>
+    </callback_type>
+
+    <callback_type name = "on_view_received">
+       <argument name = "application" type = "appnet_application" />
+       <argument name = "view_name" type="string"/>
+       <argument name = "data" type = "anything"/>
+       <argument name = "size" type = "size"/>
+       <argument name = "userdata" type = "anything"/>
+    </callback_type>
 
     <callback_type name = "on_app_enter">
        <argument name = "application" type = "appnet_application" />
@@ -196,6 +218,17 @@
        <argument name = "userdata" type="anything" >
        Userdata to be set on each callback-call
        </argument>
+    </method>
+
+    <method name = "set_on_view_received">
+       <argument name ="callback" type="appnet_on_view_received" callback="1"/>
+       <argument name = "userdata" type="anything" >
+       Userdata to be set on each callback-call
+       </argument>
+    </method>
+
+    <method name = "set_on_view_request">
+       <argument name ="callback" type="appnet_on_view_request" callback="1"/>
     </method>
 
  </class>

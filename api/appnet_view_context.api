@@ -57,6 +57,19 @@
         Setup data for next interval
     </method>
 
+    <method name="set_data">
+        Set serialized view-data
+        <argument name="data" type="anything"/>
+        <argument name="size" type="size"/>
+    </method>
+
+    <method name="get_zmsg">
+        Get zmsg and clears internal zmsg-pointer to NULL
+        <return type="zmsg" fresh="1"/>
+    </method>
+
+    
+
 </class>
 
 

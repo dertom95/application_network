@@ -24,6 +24,14 @@ extern "C" {
 //  This is a stable class, and may not change except for emergencies. It
 //  is provided in stable builds.
 //
+typedef void (appnet_on_view_request) (
+    appnet_application_t *application, appnet_view_context_t *view_context);
+
+//
+typedef void (appnet_on_view_received) (
+    appnet_application_t *application, const char *view_name, void *data, size_t size, void *userdata);
+
+//
 typedef void (appnet_on_app_enter) (
     appnet_application_t *application, void *userdata);
 
@@ -87,6 +95,10 @@ APPLICATION_NETWORK_EXPORT appnet_client_t *
 APPLICATION_NETWORK_EXPORT appnet_client_t *
     appnet_get_client (appnet_t *self);
 
+//  check if views needs to trigger and call the callback
+APPLICATION_NETWORK_EXPORT void
+    appnet_process_views (appnet_t *self);
+
 //  Try to receive message. Or none if timeouted...(return type 0)
 //  This method will call appropriate callbacks
 APPLICATION_NETWORK_EXPORT uint8_t
@@ -129,13 +141,17 @@ APPLICATION_NETWORK_EXPORT zhash_t *
 APPLICATION_NETWORK_EXPORT zlist_t *
     appnet_get_remote_application_names (appnet_t *self);
 
-//  custom: send string to application
+//  custom: send string to application.
+//  if to_peer=true: data is whispered to get_peer_id
+//  if to_peer=false: data is shouted in group
 APPLICATION_NETWORK_EXPORT void
-    appnet_remote_send_string (appnet_t *self, const char *peer_id, const char *string_data);
+    appnet_remote_send_string (appnet_t *self, bool to_peer, const char *recipent, const char *string_data);
 
 //  custom: send buffer(void* size) to application
+//  if to_peer=true: data is whispered to get_peer_id
+//  if to_peer=false: data is shouted in group
 APPLICATION_NETWORK_EXPORT void
-    appnet_remote_send_buffer (appnet_t *self, const char *peer_id, void *data, size_t size);
+    appnet_remote_send_buffer (appnet_t *self, bool to_peer, const char *recipent, void *data, size_t size);
 
 //
 APPLICATION_NETWORK_EXPORT void
@@ -160,6 +176,14 @@ APPLICATION_NETWORK_EXPORT void
 //
 APPLICATION_NETWORK_EXPORT void
     appnet_set_on_action_triggered_data (appnet_t *self, appnet_on_action_triggered_data callback, void *userdata);
+
+//
+APPLICATION_NETWORK_EXPORT void
+    appnet_set_on_view_received (appnet_t *self, appnet_on_view_received callback, void *userdata);
+
+//
+APPLICATION_NETWORK_EXPORT void
+    appnet_set_on_view_request (appnet_t *self, appnet_on_view_request callback);
 
 //  Self test of this class.
 APPLICATION_NETWORK_EXPORT void

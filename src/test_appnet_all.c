@@ -30,6 +30,56 @@ typedef bool (two_node_logic) (appnet_t*, appnet_t*);
 // --------------------------------------------
 // --------------------------------------------
 
+// application gets request to serialize data
+void on_view_request(appnet_application_t* app,appnet_view_context_t* vctx)
+{
+    appnet_t* appnet = appnet_application_parent(app);
+    char* sign = appnet_node_signature(appnet);
+
+    zhash_t* ht = zhash_new();
+    zhash_autofree(ht);
+    char* viewname = (char*)appnet_view_context_viewname(vctx);
+    zhash_insert(ht,"viewname",viewname);
+    zhash_insert(ht,"random","stuff");
+
+    zframe_t* frame = zhash_pack(ht);
+    void* data  = zframe_data(frame);
+    size_t size = zframe_size(frame);
+    appnet_view_context_set_data(vctx,data,size);
+
+    zhash_destroy(&ht);
+    zframe_destroy(&frame);
+
+    printf("%s: request view(%s) on application\n",sign,viewname);
+    free(sign);
+}
+
+// client gets viewdata from application
+void on_view_received(appnet_application_t* app,const char* viewname,void* data,size_t size,void* userdata)
+{
+    char* sign = appnet_node_signature(userdata);
+    
+    zframe_t* frame = zframe_new(data,size);
+    zhash_t* ht = zhash_unpack(frame);
+    zhash_autofree(ht);
+    
+    zlist_t* keys = zhash_keys(ht);
+    const char* current_key =  zlist_first(keys);
+
+
+    printf("%s: received viewdata:%s\n",sign,viewname);
+    printf("arguments hashtable-data:\n");
+
+    int key_size = zlist_size(keys)-1;
+    for(;key_size>=0;key_size--){
+        const char* value = zhash_lookup(ht,current_key);
+        printf("\t%s = %s\n",current_key,value);
+        current_key = zlist_next(keys);
+    }
+    zframe_destroy(&frame);
+    free(sign);
+}
+
 void on_action_triggered (const char *action_name,
                           const char *args,
                           uint8_t caller_type,
@@ -155,6 +205,8 @@ void add_default_callbacks(appnet_t* node){
     appnet_set_on_client_exit(node,on_client_exit,node);
     appnet_set_on_action_triggered(node,on_action_triggered,node);
     appnet_set_on_action_triggered_data(node,on_action_triggered_data,node);
+    appnet_set_on_view_request(node,on_view_request);
+    appnet_set_on_view_received(node,on_view_received,node);
 }
 
 // ------------
@@ -201,6 +253,16 @@ bool test_subscribe_multiple(appnet_t* app,appnet_t* client)
     appnet_application_remote_subscribe_views(remote_app,2,"globals.resources","view1");
     int rc = appnet_receive_event(app);
     assert(rc==APPNET_TYPE_SUBSCRIBE_VIEW);
+
+    int count = 200;
+    while (count--){
+        sleep(0.1f);
+        
+        appnet_process_views(app);
+        appnet_receive_all_events(app);
+
+        appnet_receive_all_events(client);
+    }
 
     appnet_application_remote_unsubscribe_view(remote_app,"globals.resources");
     rc = appnet_receive_event(app);

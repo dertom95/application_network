@@ -86,6 +86,17 @@ APPLICATION_NETWORK_EXPORT void
     appnet_view_context_prepare_next_interval (appnet_view_context_t *self);
 
 //  *** Draft method, for development use, may change without warning ***
+//  Set serialized view-data
+APPLICATION_NETWORK_EXPORT void
+    appnet_view_context_set_data (appnet_view_context_t *self, void *data, size_t size);
+
+//  *** Draft method, for development use, may change without warning ***
+//  Get zmsg and clears internal zmsg-pointer to NULL
+//  Caller owns return value and must destroy it when done.
+APPLICATION_NETWORK_EXPORT zmsg_t *
+    appnet_view_context_get_zmsg (appnet_view_context_t *self);
+
+//  *** Draft method, for development use, may change without warning ***
 //  Self test of this class.
 APPLICATION_NETWORK_EXPORT void
     appnet_view_context_test (bool verbose);

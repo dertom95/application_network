@@ -162,13 +162,6 @@ appnet_t *
     return self->parent;
 }
 
-//  check if views needs to trigger and call the callback
-void
-    appnet_application_process_views (appnet_application_t *self)
-{
-    // TODO
-}
-
 // get application name
 const char *
     appnet_application_get_name (appnet_application_t *self)
@@ -208,6 +201,9 @@ bool
     int rc = zhash_insert(self->views,viewname,view_ctx);
     zhash_freefn(self->views,viewname,s_delete_view_ctx);
 
+    zyre_t* zyre = appnet_get_zyre_node(self->parent);
+    zyre_join(zyre,viewname);
+
     return rc == 0;
 }
 
@@ -227,13 +223,22 @@ void
     va_end(args);
 }
 
-//  get zlist of all views
+//  get zlist of all view-keys
 zlist_t *
-    appnet_application_get_view_list (appnet_application_t *self)
+    appnet_application_get_view_keys (appnet_application_t *self)
 {
     assert(self);
     assert(self->views);
     return zhash_keys(self->views);
+}
+
+//  return the view-hashtable
+zhash_t *
+    appnet_application_get_view_hashtable (appnet_application_t *self)
+{
+    assert(self);
+    assert(self->views);
+    return self->views;
 }
 
 //  add application action ( appnet needs to be set as application-type )
@@ -332,7 +337,7 @@ char *
 void appnet_application_print(appnet_application_t* app){
     const char* appname = appnet_application_get_name(app);
     const char* peer_id = appnet_application_get_peer_id(app);
-    zlist_t* views    = appnet_application_get_view_list(app);
+    zlist_t* views    = appnet_application_get_view_keys(app);
     zlist_t* actions = appnet_application_get_action_list(app);
 
     printf("application:%s[%s]\n",appname,peer_id);
@@ -366,12 +371,24 @@ void whisper_to_app(appnet_application_t* self,zmsg_t* msg)
     zyre_whisper(zyre,self->peer_id,&msg);    
 }
 
+void join_group(appnet_application_t* self,const char* groupname){
+    zyre_t* zyre = appnet_get_zyre_node(self->parent);
+    zyre_join(zyre,groupname);
+}
+
+void leave_group(appnet_application_t* self,const char* groupname){
+    zyre_t* zyre = appnet_get_zyre_node(self->parent);
+    zyre_leave(zyre,groupname);
+}
+
+
 //  remote: subscribe for this application's view
 void
     appnet_application_remote_subscribe_view (appnet_application_t *self, const char *view_name)
 {
     zmsg_t* msg = appnet_msg_create_generic_string_list_message(APPNET_MSG_SUBSCRIBE_VIEW,1,view_name);
     whisper_to_app(self,msg);
+    join_group(self,view_name);
 }
 
 //  subscribe to multiple views on this application
@@ -379,6 +396,15 @@ void
     appnet_application_remote_subscribe_views (appnet_application_t *self, uint8_t view_amount, const char *views, ...)
 {
     zmsg_t* msg = appnet_msg_create_generic_string_list_message(APPNET_MSG_SUBSCRIBE_VIEW,view_amount,views);
+    
+    va_list args;
+    va_start(args,views);
+    for (int i=0;i<view_amount;i++){
+        join_group(self,views);
+        views = va_arg(args,const char*);
+    }
+    va_end(args);
+    
     whisper_to_app(self,msg);
 }
 
@@ -388,6 +414,7 @@ void
 {
     zmsg_t* msg = appnet_msg_create_generic_string_list_message(APPNET_MSG_UNSUBSCRIBE_VIEW,1,view_name);
     whisper_to_app(self,msg);
+    leave_group(self,view_name);
 }
 
 //  remote: unsubscribe from all views of this application

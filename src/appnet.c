@@ -53,12 +53,17 @@ struct _appnet_t
 
     appnet_on_action_triggered_data *on_action_triggered_data;
     void *on_action_triggered_data_userdata;
-    
+
     appnet_on_app_exit *on_app_exit;
-    void *on_app_exit_userdata;    
+    void *on_app_exit_userdata;
 
     appnet_on_client_exit *on_client_exit;
-    void *on_client_exit_userdata;    
+    void *on_client_exit_userdata;
+
+    appnet_on_view_request *on_view_request;
+
+    appnet_on_view_received *on_view_received;
+    void *on_view_received_userdata;
 
     // peers
     peers_t peers;
@@ -72,6 +77,13 @@ IMPLEMENT_CALLBACK_SETTER (on_client_enter);
 IMPLEMENT_CALLBACK_SETTER (on_app_enter);
 IMPLEMENT_CALLBACK_SETTER (on_app_exit);
 IMPLEMENT_CALLBACK_SETTER (on_client_exit);
+IMPLEMENT_CALLBACK_SETTER (on_view_received);
+
+void appnet_set_on_view_request (appnet_t *self,
+                                 appnet_on_view_request callback)
+{
+    self->on_view_request = callback;
+}
 //  --------------------------------------------------------------------------
 //  Create a new appnet
 
@@ -240,23 +252,77 @@ zyre_t *appnet_get_zyre_node (appnet_t *self)
 }
 
 //  returns info for underlying application or client
-char *
-    appnet_node_signature (appnet_t *self)
+char *appnet_node_signature (appnet_t *self)
 {
-    assert(self);
+    assert (self);
     char buf[1024];
-    if (appnet_is_client(self)){
-        appnet_client_t* client = appnet_get_client(self);
-        snprintf(buf,sizeof(buf),"client[%s|%s]",appnet_client_get_name(client),appnet_client_get_peer_id(client));
+    char* timestr = zclock_timestr();
+
+    if (appnet_is_client (self)) {
+        appnet_client_t *client = appnet_get_client (self);
+        snprintf (buf, sizeof (buf), "%s client[%s|%s]",
+                  timestr,
+                  appnet_client_get_name (client),
+                  appnet_client_get_peer_id (client));
     } else {
-        appnet_application_t* app = appnet_get_application(self);
-        snprintf(buf,sizeof(buf),"application[%s|%s]",appnet_application_get_name(app),appnet_application_get_peer_id(app));
+        appnet_application_t *app = appnet_get_application (self);
+        snprintf (buf, sizeof (buf), "%s application[%s|%s]",
+                  timestr,
+                  appnet_application_get_name (app),
+                  appnet_application_get_peer_id (app));
     }
-    char* result = NULL;
-    STRCPY(result,buf);
+    char *result = NULL;
+    STRCPY (result, buf);
+    free(timestr);
     return result;
 }
 
+
+//  check if views needs to trigger and call the callback
+void appnet_process_views (appnet_t *self)
+{
+    assert (self);
+    if (!appnet_is_application (self)) {
+        fprintf (
+          stderr,
+          "calling appnet_process_views is only valid for applications!");
+        return;
+    }
+
+    appnet_application_t *app = appnet_get_application (self);
+    zhash_t *ht_views = appnet_application_get_view_hashtable (app);
+
+    appnet_view_context_t *viewctx = zhash_first (ht_views);
+    int size = zhash_size (ht_views);
+    int64_t time = zclock_mono ();
+    while (size--) {
+        if (appnet_view_context_next_triggertime (viewctx) < time) {
+            // trigger time is passed => trigger the event callback
+            if (self->on_view_request
+                && appnet_view_context_get_amount_subscribers (viewctx) > 0) {
+                appnet_view_context_set_data (viewctx, NULL, 0);
+                self->on_view_request (app, viewctx);
+
+                const char *view_name = appnet_view_context_viewname (viewctx);
+                zmsg_t *msg = appnet_view_context_get_zmsg (viewctx);
+                if (msg) {
+                    zmsg_pushstr(msg,APPNET_PROTO_DATA_BUFFER);
+                    zmsg_pushstr(msg,view_name);
+                    zmsg_pushstr(msg,APPNET_MSG_VIEWDATA);
+                    zyre_shout (self->zyre_node, view_name, &msg);
+                }
+            } 
+            appnet_view_context_prepare_next_interval(viewctx);
+        } else {
+            const char *view_name = appnet_view_context_viewname (viewctx);
+            int next_trigger = appnet_view_context_next_triggertime (viewctx);
+            int diff = next_trigger - time;
+            printf("View:%s has to wait %d ms\n",view_name,diff);
+        }
+
+        viewctx = zhash_next (ht_views);
+    }
+}
 
 uint8_t appnet_receive_event_enter (appnet_t *self, zyre_event_t *evt)
 {
@@ -301,35 +367,35 @@ uint8_t appnet_receive_event_enter (appnet_t *self, zyre_event_t *evt)
 // EXIT - event
 uint8_t appnet_receive_event_exit (appnet_t *self, zyre_event_t *evt)
 {
-    assert(self);
-    assert(evt);
+    assert (self);
+    assert (evt);
 
-    const char* peer_id = zyre_event_peer_uuid(evt);
+    const char *peer_id = zyre_event_peer_uuid (evt);
 
     int result_code = APPNET_TYPE_UNSUPPORTED;
 
-    appnet_client_t* client = appnet_get_remote_client(self,peer_id);
-    if (client){
-        if (self->on_client_exit){
-            self->on_client_exit(client,self->on_client_exit_userdata);
+    appnet_client_t *client = appnet_get_remote_client (self, peer_id);
+    if (client) {
+        if (self->on_client_exit) {
+            self->on_client_exit (client, self->on_client_exit_userdata);
         }
         // found client => remove it from peers
-        zhash_delete(self->peers.clients,peer_id);
-        appnet_client_destroy(&client);
+        zhash_delete (self->peers.clients, peer_id);
+        appnet_client_destroy (&client);
         result_code = APPNET_TYPE_CLIENT_EXIT;
-    }
-    else {
-        appnet_application_t* app = appnet_get_remote_application(self,peer_id);
+    } else {
+        appnet_application_t *app =
+          appnet_get_remote_application (self, peer_id);
 
         if (app) {
             result_code = APPNET_TYPE_UNKNOWN_PEER;
 
-            if (self->on_app_exit){
-                self->on_app_exit(app,self->on_client_exit_userdata);
+            if (self->on_app_exit) {
+                self->on_app_exit (app, self->on_client_exit_userdata);
             }
             // remove app from peers-hashtable and destroy object
-            zhash_delete(self->peers.applications, peer_id);
-            appnet_application_destroy(&app);
+            zhash_delete (self->peers.applications, peer_id);
+            appnet_application_destroy (&app);
             result_code = APPNET_TYPE_APPLICATION_EXIT;
         } else {
             result_code = APPNET_TYPE_UNKNOWN_PEER;
@@ -339,88 +405,84 @@ uint8_t appnet_receive_event_exit (appnet_t *self, zyre_event_t *evt)
 }
 
 // handle whisper-TRIGGER-ACTION
-uint8_t appnet_receive_whisper_trigger_action(appnet_t* self,zmsg_t* msg,uint8_t caller_type,void* caller)
+uint8_t appnet_receive_whisper_trigger_action (appnet_t *self,
+                                               zmsg_t *msg,
+                                               uint8_t caller_type,
+                                               void *caller)
 {
-    assert(self);
-    assert(msg);
-    assert(caller);
+    assert (self);
+    assert (msg);
+    assert (caller);
 
-    if (!appnet_is_application(self)){
+    if (!appnet_is_application (self)) {
         return APPNET_TYPE_UNSUPPORTED; // only applications can trigger actions
     }
 
 
-    char *action_name = zmsg_popstr(msg);
+    char *action_name = zmsg_popstr (msg);
 
     // TODO - Check if action exists
 
-    char *argument_data_type = zmsg_popstr(msg);
-    
+    char *argument_data_type = zmsg_popstr (msg);
+
     int result_code = APPNET_TYPE_UNSUPPORTED;
 
-    if (self->on_action_triggered 
-            && streq(argument_data_type,APPNET_PROTO_DATA_STRING)
-    ){
-        char *action_args = zmsg_popstr(msg);
+    if (self->on_action_triggered
+        && streq (argument_data_type, APPNET_PROTO_DATA_STRING)) {
+        char *action_args = zmsg_popstr (msg);
 
-        self->on_action_triggered (action_name
-                                    ,action_args
-                                    ,caller_type
-                                    ,caller
-                                    ,self->on_action_triggered_userdata);
+        self->on_action_triggered (action_name, action_args, caller_type,
+                                   caller, self->on_action_triggered_userdata);
 
-        free(action_args);
-        result_code = APPNET_TYPE_TRIGGER_ACTION;   
+        free (action_args);
+        result_code = APPNET_TYPE_TRIGGER_ACTION;
+    } else if (self->on_action_triggered_data
+               && streq (argument_data_type, APPNET_PROTO_DATA_BUFFER)) {
+        zframe_t *frame = zmsg_pop (msg);
+        size_t size = zframe_size (frame);
+        void *dest = malloc (size);
+        memcpy (dest, zframe_data (frame), size);
+        zframe_destroy (&frame);
+
+        self->on_action_triggered_data (
+          action_name, dest, size, caller_type, caller,
+          self->on_action_triggered_data_userdata);
+        result_code = APPNET_TYPE_TRIGGER_ACTION;
     }
-    else if (self->on_action_triggered_data 
-                &&streq(argument_data_type,APPNET_PROTO_DATA_BUFFER)
-    ){
-        zframe_t* frame = zmsg_pop(msg);
-        size_t size = zframe_size(frame);
-        void* dest = malloc(size);
-        memcpy(dest,zframe_data(frame),size);
-        zframe_destroy(&frame);
+    free (action_name);
+    free (argument_data_type);
 
-        self->on_action_triggered_data (action_name
-                                    ,dest
-                                    ,size
-                                    ,caller_type
-                                    ,caller
-                                    ,self->on_action_triggered_data_userdata);                
-        result_code = APPNET_TYPE_TRIGGER_ACTION;   
-    }
-    free(action_name);
-    free(argument_data_type);
-
-    return result_code; 
+    return result_code;
 }
 
 // --- whisper - SUBSCRIBE-VIEW
-uint8_t appnet_receive_whisper_subscribe_view(appnet_t* self,zmsg_t* msg,const char* peer_id,bool subscribe)
+uint8_t appnet_receive_whisper_subscribe_view (appnet_t *self,
+                                               zmsg_t *msg,
+                                               const char *peer_id,
+                                               bool subscribe)
 {
-    assert(self);
-    assert(msg);
-    assert(peer_id);
+    assert (self);
+    assert (msg);
+    assert (peer_id);
 
-    if (!appnet_is_application(self)){
+    if (!appnet_is_application (self)) {
         return APPNET_TYPE_UNSUPPORTED; // only applications can use receive subscribe-view
     }
 
-    appnet_application_t* app = appnet_get_application(self);
+    appnet_application_t *app = appnet_get_application (self);
 
-    const char* view_name = NULL;
-    while ((view_name = zmsg_popstr(msg))){
+    char *view_name = NULL;
+    while ((view_name = zmsg_popstr (msg))) {
         // TODO: check if view exists
         if (subscribe) {
-            appnet_application_add_subscriber(app,view_name,peer_id);
+            appnet_application_add_subscriber (app, view_name, peer_id);
         } else {
-            appnet_application_remove_subscriber(app,view_name,peer_id);
+            appnet_application_remove_subscriber (app, view_name, peer_id);
         }
-        free(view_name);
+        free (view_name);
     }
-    return subscribe 
-                ? APPNET_TYPE_SUBSCRIBE_VIEW
-                : APPNET_TYPE_UNSUBSCRIBE_VIEW;
+    return subscribe ? APPNET_TYPE_SUBSCRIBE_VIEW
+                     : APPNET_TYPE_UNSUBSCRIBE_VIEW;
 }
 
 uint8_t appnet_receive_event_whisper (appnet_t *self, zyre_event_t *evt)
@@ -451,27 +513,92 @@ uint8_t appnet_receive_event_whisper (appnet_t *self, zyre_event_t *evt)
 
     zmsg_t *msg = zyre_event_msg (evt);
 
-    char *whisper_type = zmsg_popstr(msg);
+    char *whisper_type = zmsg_popstr (msg);
 
     int result_code = APPNET_TYPE_UNKNOWN_WHISPER_TYPE;
 
     if (streq (whisper_type, APPNET_MSG_TRIGGER_ACTION)) {
-        result_code = appnet_receive_whisper_trigger_action(self,msg,caller_type,caller);
-    } 
-    else if (streq (whisper_type, APPNET_MSG_SUBSCRIBE_VIEW)) {
-        result_code = appnet_receive_whisper_subscribe_view(self,msg,peer_id,true); // subscribe
-    } 
-    else if (streq (whisper_type, APPNET_MSG_UNSUBSCRIBE_VIEW)) {
-        result_code = appnet_receive_whisper_subscribe_view(self,msg,peer_id,false); // unsubscribe
-    } 
-    else {
+        result_code = appnet_receive_whisper_trigger_action (
+          self, msg, caller_type, caller);
+    } else if (streq (whisper_type, APPNET_MSG_SUBSCRIBE_VIEW)) {
+        result_code = appnet_receive_whisper_subscribe_view (self, msg, peer_id,
+                                                             true); // subscribe
+    } else if (streq (whisper_type, APPNET_MSG_UNSUBSCRIBE_VIEW)) {
+        result_code = appnet_receive_whisper_subscribe_view (
+          self, msg, peer_id, false); // unsubscribe
+    } else {
         fprintf (stderr, "unsupported WHISPER-Type:%s", whisper_type);
         zyre_event_print (evt);
     }
 
-    free(whisper_type);
+    free (whisper_type);
 
     return result_code;
+}
+
+uint8_t appnet_receive_event_shout (appnet_t *self, zyre_event_t *evt)
+{
+    assert (self);
+    assert (evt);
+
+    const char *peer_id = zyre_event_peer_uuid (evt);
+    assert (peer_id);
+    void* caller = zhash_lookup (self->peers.clients, peer_id);
+
+    uint8_t caller_type = APPNET_CALLER_TYPE_CLIENT;
+
+    if (!caller) {
+        // no client, look in app-list
+        caller = zhash_lookup (self->peers.applications, peer_id);
+
+        if (!caller) {
+            fprintf (
+              stderr,
+              "couldn't find client(zyre-node with uuid:%s) ignoring event\n",
+              peer_id);
+            zyre_event_print (evt);
+            return APPNET_TYPE_UNKNOWN_PEER;
+        }
+        caller_type = APPNET_CALLER_TYPE_APPLICATION;
+    }
+
+
+    zmsg_t *msg = zyre_event_msg (evt);
+
+    char *shout_type = zmsg_popstr (msg);
+
+    int result_code = APPNET_TYPE_UNKNOWN_SHOUT_TYPE;
+
+    if (streq (shout_type, APPNET_MSG_VIEWDATA)) {
+
+        if (caller_type != APPNET_CALLER_TYPE_APPLICATION){
+            result_code = APPNET_TYPE_UNSUPPORTED;
+        } else {
+            char* view_name = zmsg_popstr(msg);
+            char* data_type = zmsg_popstr(msg);
+            if (streq(data_type,APPNET_PROTO_DATA_BUFFER)){
+                if (self->on_view_received){
+                    zframe_t* frame = zmsg_pop(msg);
+                    
+                    self->on_view_received((appnet_application_t*)caller
+                                                ,view_name
+                                                ,zframe_data(frame)
+                                                ,zframe_size(frame)
+                                                ,self->on_view_received_userdata);
+                    
+                    zframe_destroy(&frame);
+                }
+            } else {
+                fprintf(stderr,"only data-type is supported for incoming-viewdata");
+            }
+            free(data_type);
+            free(view_name);
+        }
+    } 
+
+    free(shout_type);
+    return result_code;    
+
 }
 
 //  debug: print zyre-event
@@ -490,13 +617,17 @@ uint8_t _appnet_receive_event (appnet_t *self)
     const char *evt_type = zyre_event_type (evt);
 
     if (streq (evt_type, "ENTER")) {
-        return_code = appnet_receive_event_enter (self, evt); // process zyre_enter_event
-    } 
-    else if (streq (evt_type, "EXIT")) {
-        return_code = appnet_receive_event_exit (self, evt); // process zyre_whisper_event
-    }    
-    else if (streq (evt_type, "WHISPER")) {
-        return_code = appnet_receive_event_whisper (self, evt); // process zyre_whisper_event
+        // process zyre_enter_event
+        return_code = appnet_receive_event_enter (self, evt);
+    } else if (streq (evt_type, "EXIT")) {
+        // process zyre_exit_event
+        return_code = appnet_receive_event_exit (self, evt);
+    } else if (streq (evt_type, "WHISPER")) {
+        // process zyre_whisper_event
+        return_code = appnet_receive_event_whisper (self, evt);
+    } else if (streq (evt_type, "SHOUT")) {
+        // process zyre_shot_event
+        return_code = appnet_receive_event_shout (self, evt);
     } else {
         return_code = APPNET_TYPE_UNSUPPORTED;
         //fprintf(stderr,"unsupported event-type:%s\n",evt_type);
@@ -510,9 +641,9 @@ uint8_t _appnet_receive_event (appnet_t *self)
 uint8_t appnet_receive_event (appnet_t *self)
 {
     uint8_t last_type = APPNET_TYPE_UNSUPPORTED;
-    while (last_type != APPNET_TYPE_TIMEOUT){
-        last_type = _appnet_receive_event(self);
-        if (last_type != APPNET_TYPE_UNSUPPORTED){
+    while (last_type != APPNET_TYPE_TIMEOUT) {
+        last_type = _appnet_receive_event (self);
+        if (last_type != APPNET_TYPE_UNSUPPORTED) {
             break;
         }
     }
@@ -520,25 +651,24 @@ uint8_t appnet_receive_event (appnet_t *self)
 }
 
 //  Receive all messages and call the corresponding callbacks
-void
-    appnet_receive_all_events (appnet_t *self)
+void appnet_receive_all_events (appnet_t *self)
 {
     uint8_t last_type = APPNET_TYPE_UNSUPPORTED;
-    while (last_type != APPNET_TYPE_TIMEOUT){
-        last_type = appnet_receive_event(self);
-        if (last_type == APPNET_TYPE_TIMEOUT){
+    while (last_type != APPNET_TYPE_TIMEOUT) {
+        last_type = appnet_receive_event (self);
+        if (last_type == APPNET_TYPE_TIMEOUT) {
             break;
         }
-    }    
+    }
 }
 
 //  get client by uuid
-appnet_client_t *
-    appnet_get_remote_client (appnet_t *self, const char *client_uuid)
+appnet_client_t *appnet_get_remote_client (appnet_t *self,
+                                           const char *client_uuid)
 {
-    assert(self);
-    assert(client_uuid);
-    appnet_client_t* client = zhash_lookup(self->peers.clients,client_uuid);
+    assert (self);
+    assert (client_uuid);
+    appnet_client_t *client = zhash_lookup (self->peers.clients, client_uuid);
     return client;
 }
 
@@ -566,30 +696,37 @@ zhash_t *appnet_get_remote_applications (appnet_t *self)
 
 //  custom: send string to application
 void appnet_remote_send_string (appnet_t *self,
-                                const char *peer_id,
+                                bool to_peer,
+                                const char *recipent,
                                 const char *string_data)
 {
     assert (self);
-    assert (peer_id);
+    assert (recipent);
     assert (string_data);
 
-    zmsg_t* msg = zmsg_new();
-    zmsg_pushstr(msg,string_data);
-    zyre_whisper (self->zyre_node, peer_id, &msg);
+    zmsg_t *msg = zmsg_new ();
+    zmsg_pushstr (msg, string_data);
+    if (to_peer) {
+        zyre_whisper (self->zyre_node, recipent, &msg);
+    } else {
+        zyre_shout (self->zyre_node, recipent, &msg);
+    }
 }
 //  custom: send buffer(void* size) to application
-void appnet_remote_send_buffer (appnet_t *self,
-                                const char *peer_id,
-                                void *data,
-                                size_t size)
+void appnet_remote_send_buffer (
+  appnet_t *self, bool to_peer, const char *recipent, void *data, size_t size)
 {
     assert (self);
-    assert (peer_id);
+    assert (recipent);
     assert (data);
 
     zmsg_t *msg = zmsg_new ();
     zmsg_addmem (msg, data, size);
-    zyre_whisper (self->zyre_node, peer_id, &msg);
+    if (to_peer) {
+        zyre_whisper (self->zyre_node, recipent, &msg);
+    } else {
+        zyre_shout (self->zyre_node, recipent, &msg);
+    }
 }
 
 
@@ -653,15 +790,16 @@ void on_action_triggered (const char *action_name,
                           void *userdata)
 {
     if (caller_type == APPNET_CALLER_TYPE_APPLICATION) {
-        printf ("Client[%s|%s] triggered ACTION: %s\n"
-                    ,appnet_application_get_name ((appnet_application_t*)called_by)
-                    ,appnet_application_get_peer_id ((appnet_application_t*)called_by)
-                    ,action_name);
+        printf (
+          "Client[%s|%s] triggered ACTION: %s\n",
+          appnet_application_get_name ((appnet_application_t *) called_by),
+          appnet_application_get_peer_id ((appnet_application_t *) called_by),
+          action_name);
     } else if (caller_type == APPNET_CALLER_TYPE_CLIENT) {
-        printf ("Client[%s|%s] triggered ACTION: %s\n"
-                ,appnet_client_get_name ((appnet_client_t*)called_by)
-                ,appnet_client_get_peer_id ((appnet_client_t*)called_by)
-                ,action_name);
+        printf ("Client[%s|%s] triggered ACTION: %s\n",
+                appnet_client_get_name ((appnet_client_t *) called_by),
+                appnet_client_get_peer_id ((appnet_client_t *) called_by),
+                action_name);
     }
 }
 

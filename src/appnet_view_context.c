@@ -30,6 +30,7 @@ struct _appnet_view_context_t {
     int interval_in_ms;
     zhash_t* subscribers;
     void* userdata;
+    zmsg_t* msg;
 };
 
 
@@ -44,6 +45,8 @@ appnet_view_context_new (const char* viewname)
     //  Initialize class properties here
     STRCPY(self->name,viewname);
     self->subscribers = zhash_new();
+    self->interval_in_ms = 2500;
+    self->msg=NULL;
     return self;
 }
 
@@ -144,6 +147,29 @@ int
 {
     assert(self);
     return zhash_size(self->subscribers);
+}
+
+//  Set serialized view-data
+void
+    appnet_view_context_set_data (appnet_view_context_t *self, void *data, size_t size)
+{
+    assert(self);
+    //assert(data);
+    assert(self->msg==NULL);
+
+    if (data != NULL){
+        self->msg = zmsg_new();
+        zmsg_addmem(self->msg,data,size);
+    }
+}
+
+//  Pack data in zmsg, or NULL if no data was set
+zmsg_t *
+    appnet_view_context_get_zmsg (appnet_view_context_t *self)
+{
+    zmsg_t* ptr = self->msg;
+    self->msg = NULL;
+    return ptr;
 }
 
 

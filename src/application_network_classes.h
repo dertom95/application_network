@@ -54,6 +54,7 @@
 #define APPNET_MSG_TRIGGER_ACTION  "trigger_action"  //
 #define APPNET_MSG_SUBSCRIBE_VIEW  "subscribe_view"  //
 #define APPNET_MSG_UNSUBSCRIBE_VIEW  "unsubscribe_view"  //
+#define APPNET_MSG_VIEWDATA  "incoming_viewdata"  //
 
 //  Self test for private classes
 APPLICATION_NETWORK_PRIVATE void

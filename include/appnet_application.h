@@ -35,10 +35,6 @@ APPLICATION_NETWORK_EXPORT appnet_application_t *
 APPLICATION_NETWORK_EXPORT void
     appnet_application_destroy (appnet_application_t **self_p);
 
-//  check if views needs to trigger and call the callback
-APPLICATION_NETWORK_EXPORT void
-    appnet_application_process_views (appnet_application_t *self);
-
 //  get application name
 APPLICATION_NETWORK_EXPORT const char *
     appnet_application_get_name (appnet_application_t *self);
@@ -79,9 +75,13 @@ APPLICATION_NETWORK_EXPORT void
 APPLICATION_NETWORK_EXPORT void
     appnet_application_remove_subscriber (appnet_application_t *self, const char *viewname, const char *peer_id);
 
-//  get zlist of all views
+//  get zlist of all views-keys
 APPLICATION_NETWORK_EXPORT zlist_t *
-    appnet_application_get_view_list (appnet_application_t *self);
+    appnet_application_get_view_keys (appnet_application_t *self);
+
+//  return the view-hashtable
+APPLICATION_NETWORK_EXPORT zhash_t *
+    appnet_application_get_view_hashtable (appnet_application_t *self);
 
 //  get zlist of all actions
 APPLICATION_NETWORK_EXPORT zlist_t *
