@@ -5,7 +5,9 @@
 
     This file is part of application-network, an open-source framework for connecting application and viewers p2p
 
-    This Source Code Form is subject to the terms of the Mozilla Public
+    This Source Code Form
+    
+     is subject to the terms of the Mozilla Public
     License, v. 2.0. If a copy of the MPL was not distributed with this
     file, You can obtain one at http://mozilla.org/MPL/2.0/.
     =========================================================================
@@ -218,7 +220,11 @@ bool test_trigger_string_argument(appnet_t* app,appnet_t* client)
     appnet_application_t* remote_app = appnet_get_remote_application(client,zlist_first(app_names));
     appnet_application_remote_trigger_action(remote_app,"doit","argument");
     int rc = appnet_receive_event(app);
-    assert(rc == APPNET_TYPE_TRIGGER_ACTION);
+    assert(rc == APPNET_TYPE_TIMEOUT); // unknown trigger => not send at all
+
+    appnet_application_remote_trigger_action(remote_app,"start","1");
+    rc = appnet_receive_event(app);
+    assert(rc == APPNET_TYPE_TRIGGER_ACTION); // unknown trigger => not send at all
 
     return true;
 }
@@ -250,14 +256,14 @@ bool test_subscribe_multiple(appnet_t* app,appnet_t* client)
 
     // client sends view-request
 //    appnet_application_remote_subscribe_view(remote_app,"globals.resources");
-    appnet_application_remote_subscribe_views(remote_app,2,"globals.resources","view1");
+    appnet_application_remote_subscribe_views(remote_app,2,"globals.resources","view95");
     int rc = appnet_receive_event(app);
     assert(rc==APPNET_TYPE_SUBSCRIBE_VIEW);
 
     int count = 200;
     while (count--){
         sleep(0.1f);
-        
+
         appnet_process_views(app);
         appnet_receive_all_events(app);
 
@@ -283,7 +289,7 @@ int test_enter_exit(two_node_logic* inner_logic) {
     // create application-node
     appnet_t* app_node_1 = create_application_node("app_1");
     appnet_application_t* app_1 = appnet_get_application(app_node_1);
-    appnet_application_add_views(app_1,4,"view1","view2","view.two","globals.resources");
+    appnet_application_add_views(app_1,1000,4,"view1","view2","view.two","globals.resources");
     appnet_application_add_actions(app_1,3,"start","restart","stop");
     add_default_callbacks(app_node_1);
 
@@ -341,9 +347,9 @@ int main (int argc, char *argv [])
 
 
   //  test_enter_exit(NULL); // start / stop
-//    test_enter_exit(test_trigger_string_argument); // start / trigger-string / stop
+    test_enter_exit(test_trigger_string_argument); // start / trigger-string / stop
     //test_enter_exit(test_trigger_data_argument); // start / trigger-string / stop
-    test_enter_exit(test_subscribe_multiple);
+   // test_enter_exit(test_subscribe_multiple);
 
     return 0;
 }

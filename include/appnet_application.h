@@ -35,6 +35,10 @@ APPLICATION_NETWORK_EXPORT appnet_application_t *
 APPLICATION_NETWORK_EXPORT void
     appnet_application_destroy (appnet_application_t **self_p);
 
+//  checks if this action exists in this application
+APPLICATION_NETWORK_EXPORT bool
+    appnet_application_has_action (appnet_application_t *self, const char *action_name);
+
 //  get application name
 APPLICATION_NETWORK_EXPORT const char *
     appnet_application_get_name (appnet_application_t *self);
@@ -61,11 +65,15 @@ APPLICATION_NETWORK_EXPORT void
 
 //  add application view ( appnet needs to be set as application-type )
 APPLICATION_NETWORK_EXPORT bool
-    appnet_application_add_view (appnet_application_t *self, const char *view);
+    appnet_application_add_view (appnet_application_t *self, const char *view, int interval);
 
 //  add multiple views to applications
 APPLICATION_NETWORK_EXPORT void
-    appnet_application_add_views (appnet_application_t *self, uint8_t view_amount, const char *view, ...);
+    appnet_application_add_views (appnet_application_t *self, int interval, uint8_t view_amount, const char *view, ...);
+
+//  checks if this viewname exists in this application
+APPLICATION_NETWORK_EXPORT bool
+    appnet_application_has_view (appnet_application_t *self, const char *view_name);
 
 //  add this user(peer-id) to be subscriber on the specified view
 APPLICATION_NETWORK_EXPORT void

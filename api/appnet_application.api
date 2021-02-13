@@ -11,6 +11,15 @@
 
     <destructor/>
 
+
+
+    <method name ="has_action">
+        checks if this action exists in this application
+        <argument name="action_name" type="string"/>
+        <return type="boolean"/>
+    </method>
+
+
     <method name = "get_name">
         get application name
         <return type="string"/>
@@ -43,15 +52,23 @@
     <method name = "add_view">
         add application view ( appnet needs to be set as application-type )
         <argument name = "view" type = "string"/>
+        <argument name = "interval" type="integer">the interval(in ms) this view trigger its coresponding callback</argument>
         <return type = "boolean" />
     </method>
 
     <method name = "add_views">
         add multiple views to applications
+        <argument name = "interval" type="integer">the interval(in ms) this view trigger its coresponding callback</argument>
         <argument name = "view_amount" type="number">The amount of views to be added</argument>
         <!-- <argument name = "views" type = "va_list"/> -->
         <argument name = "view" type = "string" variadic = "1" />
     </method>
+
+    <method name ="has_view">
+        checks if this viewname exists in this application
+        <argument name="view_name" type="string"/>
+        <return type="boolean"/>
+    </method>    
 
     <method name="add_subscriber">
         add this user(peer-id) to be subscriber on the specified view

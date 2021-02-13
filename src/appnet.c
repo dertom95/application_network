@@ -317,7 +317,7 @@ void appnet_process_views (appnet_t *self)
             const char *view_name = appnet_view_context_viewname (viewctx);
             int next_trigger = appnet_view_context_next_triggertime (viewctx);
             int diff = next_trigger - time;
-            printf("View:%s has to wait %d ms\n",view_name,diff);
+            //printf("View:%s has to wait %d ms\n",view_name,diff);
         }
 
         viewctx = zhash_next (ht_views);
@@ -418,39 +418,43 @@ uint8_t appnet_receive_whisper_trigger_action (appnet_t *self,
         return APPNET_TYPE_UNSUPPORTED; // only applications can trigger actions
     }
 
+    appnet_application_t* app = appnet_get_application(self);
 
     char *action_name = zmsg_popstr (msg);
 
-    // TODO - Check if action exists
-
-    char *argument_data_type = zmsg_popstr (msg);
-
     int result_code = APPNET_TYPE_UNSUPPORTED;
 
-    if (self->on_action_triggered
-        && streq (argument_data_type, APPNET_PROTO_DATA_STRING)) {
-        char *action_args = zmsg_popstr (msg);
+    if (appnet_application_has_action(app,action_name)){
+        char *argument_data_type = zmsg_popstr (msg);
 
-        self->on_action_triggered (action_name, action_args, caller_type,
-                                   caller, self->on_action_triggered_userdata);
+        if (self->on_action_triggered
+            && streq (argument_data_type, APPNET_PROTO_DATA_STRING)) {
+            char *action_args = zmsg_popstr (msg);
 
-        free (action_args);
-        result_code = APPNET_TYPE_TRIGGER_ACTION;
-    } else if (self->on_action_triggered_data
-               && streq (argument_data_type, APPNET_PROTO_DATA_BUFFER)) {
-        zframe_t *frame = zmsg_pop (msg);
-        size_t size = zframe_size (frame);
-        void *dest = malloc (size);
-        memcpy (dest, zframe_data (frame), size);
-        zframe_destroy (&frame);
+            self->on_action_triggered (action_name, action_args, caller_type,
+                                    caller, self->on_action_triggered_userdata);
 
-        self->on_action_triggered_data (
-          action_name, dest, size, caller_type, caller,
-          self->on_action_triggered_data_userdata);
-        result_code = APPNET_TYPE_TRIGGER_ACTION;
+            free (action_args);
+            result_code = APPNET_TYPE_TRIGGER_ACTION;
+        } else if (self->on_action_triggered_data
+                && streq (argument_data_type, APPNET_PROTO_DATA_BUFFER)) {
+            zframe_t *frame = zmsg_pop (msg);
+            size_t size = zframe_size (frame);
+            void *dest = malloc (size);
+            memcpy (dest, zframe_data (frame), size);
+            zframe_destroy (&frame);
+
+            self->on_action_triggered_data (
+            action_name, dest, size, caller_type, caller,
+            self->on_action_triggered_data_userdata);
+            result_code = APPNET_TYPE_TRIGGER_ACTION;
+        }
+        free (argument_data_type);
+    }  else {
+        fprintf(stderr,"unknown action[%s] to trigger! ignoring!\n",action_name);
     }
+
     free (action_name);
-    free (argument_data_type);
 
     return result_code;
 }
@@ -471,8 +475,16 @@ uint8_t appnet_receive_whisper_subscribe_view (appnet_t *self,
 
     appnet_application_t *app = appnet_get_application (self);
 
+    uint8_t return_code = APPNET_TYPE_UNSUPPORTED;
+
     char *view_name = NULL;
     while ((view_name = zmsg_popstr (msg))) {
+        if (!appnet_application_has_view(app,view_name)){
+            fprintf(stderr,"unknown view-request[%s] from %s\n",view_name,peer_id);
+            return_code = APPNET_TYPE_UNSUPPORTED;
+            break;
+        }
+
         // TODO: check if view exists
         if (subscribe) {
             appnet_application_add_subscriber (app, view_name, peer_id);
@@ -480,9 +492,10 @@ uint8_t appnet_receive_whisper_subscribe_view (appnet_t *self,
             appnet_application_remove_subscriber (app, view_name, peer_id);
         }
         free (view_name);
+        return_code = subscribe ? APPNET_TYPE_SUBSCRIBE_VIEW
+                                : APPNET_TYPE_UNSUBSCRIBE_VIEW;
     }
-    return subscribe ? APPNET_TYPE_SUBSCRIBE_VIEW
-                     : APPNET_TYPE_UNSUBSCRIBE_VIEW;
+    return return_code;
 }
 
 uint8_t appnet_receive_event_whisper (appnet_t *self, zyre_event_t *evt)
@@ -696,6 +709,7 @@ zhash_t *appnet_get_remote_applications (appnet_t *self)
 
 //  custom: send string to application
 void appnet_remote_send_string (appnet_t *self,
+                                const char* msg_type,
                                 bool to_peer,
                                 const char *recipent,
                                 const char *string_data)
@@ -705,7 +719,9 @@ void appnet_remote_send_string (appnet_t *self,
     assert (string_data);
 
     zmsg_t *msg = zmsg_new ();
-    zmsg_pushstr (msg, string_data);
+    zmsg_addstr(msg,msg_type);
+    zmsg_addstr(msg,APPNET_PROTO_DATA_STRING);    
+    zmsg_addstr(msg,string_data);
     if (to_peer) {
         zyre_whisper (self->zyre_node, recipent, &msg);
     } else {
@@ -713,14 +729,21 @@ void appnet_remote_send_string (appnet_t *self,
     }
 }
 //  custom: send buffer(void* size) to application
-void appnet_remote_send_buffer (
-  appnet_t *self, bool to_peer, const char *recipent, void *data, size_t size)
+void appnet_remote_send_buffer( appnet_t *self, 
+                                const char* msg_type,
+                                bool to_peer, 
+                                const char *recipent, 
+                                void *data, 
+                                size_t size)
 {
     assert (self);
     assert (recipent);
     assert (data);
+    assert (msg_type);
 
     zmsg_t *msg = zmsg_new ();
+    zmsg_addstr(msg,msg_type);
+    zmsg_addstr(msg,APPNET_PROTO_DATA_BUFFER);
     zmsg_addmem (msg, data, size);
     if (to_peer) {
         zyre_whisper (self->zyre_node, recipent, &msg);
@@ -828,9 +851,9 @@ void appnet_test (bool verbose)
 
     appnet_application_set_name (appdata, buf);
 
-    appnet_application_add_view (appdata, "entt.comps");
-    appnet_application_add_view (appdata, "entt.comps.transform");
-    appnet_application_add_view (appdata, "entt.comps.renderable");
+    appnet_application_add_view (appdata, "entt.comps",1000);
+    appnet_application_add_view (appdata, "entt.comps.transform",1000);
+    appnet_application_add_view (appdata, "entt.comps.renderable",1000);
 
     appnet_application_add_action (appdata, "global.cheat.add_resource");
     appnet_application_add_action (appdata, "global.game.stop");

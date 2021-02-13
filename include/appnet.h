@@ -145,13 +145,13 @@ APPLICATION_NETWORK_EXPORT zlist_t *
 //  if to_peer=true: data is whispered to get_peer_id
 //  if to_peer=false: data is shouted in group
 APPLICATION_NETWORK_EXPORT void
-    appnet_remote_send_string (appnet_t *self, bool to_peer, const char *recipent, const char *string_data);
+    appnet_remote_send_string (appnet_t *self, const char *msg_type, bool to_peer, const char *recipent, const char *string_data);
 
 //  custom: send buffer(void* size) to application
 //  if to_peer=true: data is whispered to get_peer_id
 //  if to_peer=false: data is shouted in group
 APPLICATION_NETWORK_EXPORT void
-    appnet_remote_send_buffer (appnet_t *self, bool to_peer, const char *recipent, void *data, size_t size);
+    appnet_remote_send_buffer (appnet_t *self, const char *msg_type, bool to_peer, const char *recipent, void *data, size_t size);
 
 //
 APPLICATION_NETWORK_EXPORT void

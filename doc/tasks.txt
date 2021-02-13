@@ -3,10 +3,11 @@
 ( ) - app: callback to grab data => send
 ( ) - app/client: trigger_action make sure actions are valid (on client and application)
 ( ) - app/client: (un)subscribe view: make sure actions are valid (on client and application)
-( ) - app: implement process-method that drives view-callbacks and zyre-events
+(x) - app: implement process-method that drives view-callbacks and zyre-events
 ( ) - activate valgrind-target and get used to it to find memory-leaks
 ( ) - app/client: unsubscribe all
-( ) - app/client: enter/leave group on subscription
+( ) - when client leaves remove from view-subscribers
+(x) - app/client: enter/leave group on subscription
 
 (x) - fix: multiple applications at once - bug
 (x) - Test: multiple applications mit multiple clients

@@ -13,7 +13,6 @@
         <argument name = "timeout" type="real"/>
     </method>
 
-
     <method name="is_application">
         Is this appnet an application?
         <return type = "boolean"/>
@@ -104,6 +103,7 @@
         custom: send string to application.
         if to_peer=true: data is whispered to get_peer_id
         if to_peer=false: data is shouted in group
+        <argument name = "msg_type" type="string"/>
         <argument name = "to_peer" type="boolean"/>
         <argument name = "recipent" type="string"/>
         <argument name = "string_data" type="string"/>
@@ -113,6 +113,7 @@
         custom: send buffer(void* size) to application
         if to_peer=true: data is whispered to get_peer_id
         if to_peer=false: data is shouted in group
+        <argument name = "msg_type" type="string"/>
         <argument name = "to_peer" type="boolean"/>
         <argument name = "recipent" type="string"/>
         <argument name = "data" type="anything"/>
