@@ -70,6 +70,12 @@
         <return type="boolean"/>
     </method>    
 
+    <method name="zyre_group_name">
+        return full zyre-groupname [peer-id].[viewname]
+        <argument name="view_name" type="string"/>
+        <return type="string" fresh="1"/>
+    </method>
+
     <method name="add_subscriber">
         add this user(peer-id) to be subscriber on the specified view
         <argument name="viewname" type="string"/>
@@ -79,6 +85,11 @@
     <method name="remove_subscriber">
         remove this user(peer-id) from subscriber-list of the specified view
         <argument name="viewname" type="string"/>
+        <argument name="peer_id" type="string"/>
+    </method>
+
+    <method name="remove_subscriber_from_views">
+        remove subscriber from all views
         <argument name="peer_id" type="string"/>
     </method>
 

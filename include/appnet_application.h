@@ -75,6 +75,11 @@ APPLICATION_NETWORK_EXPORT void
 APPLICATION_NETWORK_EXPORT bool
     appnet_application_has_view (appnet_application_t *self, const char *view_name);
 
+//  return full zyre-groupname [peer-id].[viewname]
+//  Caller owns return value and must destroy it when done.
+APPLICATION_NETWORK_EXPORT char *
+    appnet_application_zyre_group_name (appnet_application_t *self, const char *view_name);
+
 //  add this user(peer-id) to be subscriber on the specified view
 APPLICATION_NETWORK_EXPORT void
     appnet_application_add_subscriber (appnet_application_t *self, const char *viewname, const char *peer_id);
@@ -82,6 +87,10 @@ APPLICATION_NETWORK_EXPORT void
 //  remove this user(peer-id) from subscriber-list of the specified view
 APPLICATION_NETWORK_EXPORT void
     appnet_application_remove_subscriber (appnet_application_t *self, const char *viewname, const char *peer_id);
+
+//  remove subscriber from all views
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_remove_subscriber_from_views (appnet_application_t *self, const char *peer_id);
 
 //  get zlist of all views-keys
 APPLICATION_NETWORK_EXPORT zlist_t *

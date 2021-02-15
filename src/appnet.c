@@ -309,7 +309,9 @@ void appnet_process_views (appnet_t *self)
                     zmsg_pushstr(msg,APPNET_PROTO_DATA_BUFFER);
                     zmsg_pushstr(msg,view_name);
                     zmsg_pushstr(msg,APPNET_MSG_VIEWDATA);
-                    zyre_shout (self->zyre_node, view_name, &msg);
+                    char* group_name = appnet_application_zyre_group_name(app,view_name);
+                    zyre_shout (self->zyre_node, group_name, &msg);
+                    free(group_name);
                 }
             } 
             appnet_view_context_prepare_next_interval(viewctx);
@@ -359,7 +361,7 @@ uint8_t appnet_receive_event_enter (appnet_t *self, zyre_event_t *evt)
         return APPNET_TYPE_CLIENT_ENTER;
     } else {
         fprintf (stderr, "unknown enter state! with zyre-event:\n");
-        zyre_event_print (evt);
+       // zyre_event_print (evt);
         return APPNET_TYPE_UNSUPPORTED;
     }
 }
@@ -379,8 +381,13 @@ uint8_t appnet_receive_event_exit (appnet_t *self, zyre_event_t *evt)
         if (self->on_client_exit) {
             self->on_client_exit (client, self->on_client_exit_userdata);
         }
+        if (appnet_is_application(self)){
+            // remove the EXIT-peer from views
+            appnet_application_remove_subscriber_from_views(self->application_data,peer_id);
+        }
         // found client => remove it from peers
         zhash_delete (self->peers.clients, peer_id);
+
         appnet_client_destroy (&client);
         result_code = APPNET_TYPE_CLIENT_EXIT;
     } else {
@@ -392,6 +399,11 @@ uint8_t appnet_receive_event_exit (appnet_t *self, zyre_event_t *evt)
 
             if (self->on_app_exit) {
                 self->on_app_exit (app, self->on_client_exit_userdata);
+            }
+
+            if (appnet_is_application(self)){
+                // remove the EXIT-peer from views
+                appnet_application_remove_subscriber_from_views(self->application_data,peer_id);
             }
             // remove app from peers-hashtable and destroy object
             zhash_delete (self->peers.applications, peer_id);
@@ -644,7 +656,7 @@ uint8_t _appnet_receive_event (appnet_t *self)
     } else {
         return_code = APPNET_TYPE_UNSUPPORTED;
         //fprintf(stderr,"unsupported event-type:%s\n",evt_type);
-        zyre_event_print (evt);
+        //zyre_event_print (evt);
     }
 
     zyre_event_destroy (&evt);
@@ -823,6 +835,21 @@ void on_action_triggered (const char *action_name,
                 appnet_client_get_name ((appnet_client_t *) called_by),
                 appnet_client_get_peer_id ((appnet_client_t *) called_by),
                 action_name);
+    }
+}
+
+typedef enum {
+    AA,
+    BB,
+    CC,
+    DD
+}TestEnum;
+
+void testE(){
+    TestEnum a;
+
+    switch (a) {
+
     }
 }
 

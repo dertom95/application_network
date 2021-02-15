@@ -1,13 +1,18 @@
-( ) - client: subscribe to view
-( ) - app: detect subscription
-( ) - app: callback to grab data => send
-( ) - app/client: trigger_action make sure actions are valid (on client and application)
-( ) - app/client: (un)subscribe view: make sure actions are valid (on client and application)
+( ) - add private messages
+(x) - view-data-groups should be prefixed by peerid
+(x) - client: subscribe to view
+(x) - app: detect subscription
+(x) - app: callback to grab data => send
+(x) - app/client: trigger_action make sure actions are valid (on client and application)
+(x) - app/client: (un)subscribe view: make sure actions are valid (on client and application)
 (x) - app: implement process-method that drives view-callbacks and zyre-events
 ( ) - activate valgrind-target and get used to it to find memory-leaks
-( ) - app/client: unsubscribe all
+(x) - app/client: unsubscribe all
 ( ) - when client leaves remove from view-subscribers
+( ) - if client reconnect resubscribe...
+( ) - make reconnect possible(resubscribe to former views again)
 (x) - app/client: enter/leave group on subscription
+
 
 (x) - fix: multiple applications at once - bug
 (x) - Test: multiple applications mit multiple clients

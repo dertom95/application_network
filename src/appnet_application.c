@@ -75,6 +75,8 @@ appnet_application_t *
     
     self->remote = true;
     self->parent = parent;
+    self->views = zhash_new();
+    self->actions = zhash_new();
 
     const char* app_meta = zyre_event_header(evt,APPNET_HEADER_APPLICATION);
     cJSON* json = cJSON_Parse(app_meta);
@@ -91,13 +93,12 @@ appnet_application_t *
     if (cJSON_IsArray(json_views)){
         int size = cJSON_GetArraySize(json_views);
         if (size>0){
-            self->views = zhash_new();
+            zhash_autofree(self->views);
             for (int i=0;i<size;i++){
                 cJSON* json_view = cJSON_GetArrayItem(json_views,i);
                 char* view_name = cJSON_GetStringValue(json_view);
-                appnet_view_context_t* view_ctx = appnet_view_context_new(view_name);
-                zhash_insert(self->views,view_name,view_ctx);
-                zhash_freefn(self->views,view_name,s_delete_view_ctx);
+                // in remote-applications, view value is only true/false-string
+                zhash_insert(self->views,view_name,"false"); 
             }
         }
     }
@@ -106,7 +107,6 @@ appnet_application_t *
     if (cJSON_IsArray(json_actions)){
         int size = cJSON_GetArraySize(json_actions);
         if (size>0){
-            self->actions = zhash_new();
             zhash_autofree(self->actions);
             for (int i=0;i<size;i++){
                 cJSON* json_action = cJSON_GetArrayItem(json_actions,i);
@@ -224,7 +224,9 @@ bool
     zhash_freefn(self->views,viewname,s_delete_view_ctx);
 
     zyre_t* zyre = appnet_get_zyre_node(self->parent);
-    zyre_join(zyre,viewname);
+    char* group_name = appnet_application_zyre_group_name(self,viewname);
+    zyre_join(zyre,group_name);
+    free(group_name);
 
     return rc == 0;
 }
@@ -321,8 +323,23 @@ void
     assert(peer_id);
 
     appnet_view_context_t* view_ctx = zhash_lookup(self->views,viewname);
-    assert(view_ctx);
-    appnet_view_context_remove_subscriber(view_ctx,peer_id);
+
+    if (view_ctx){
+        appnet_view_context_remove_subscriber(view_ctx,peer_id);
+    }
+}
+
+//  remove subscriber from all views
+void
+    appnet_application_remove_subscriber_from_views (appnet_application_t *self, const char *peer_id)
+{
+    assert(self);
+    assert(peer_id);
+    zlist_t* keys = zhash_keys(self->views);
+    for (const char* view_name = zlist_next(keys);view_name!=NULL;view_name=zlist_next(keys)){
+        appnet_application_remove_subscriber(self,view_name,peer_id);
+    }
+
 }
 
 
@@ -384,6 +401,17 @@ void appnet_application_print(appnet_application_t* app){
     }    
 }
 
+//  return full zyre-groupname [peer-id].[viewname]
+//  Caller owns return value and must destroy it when done.
+char *
+    appnet_application_zyre_group_name (appnet_application_t *self, const char *view_name)
+{
+    char* buf = malloc(200);
+    snprintf(buf,200,"%s.%s",self->peer_id,view_name);
+    return buf;
+}
+
+
 // --------------------------------------------------------------------------------------
 // --                                     remote calls                                 --
 // --------------------------------------------------------------------------------------
@@ -415,9 +443,22 @@ void
         fprintf(stderr,"unknown view[%s] to subscribe to! ignoring!\n",view_name);
         return;
     }
+    
+    // check if view is already subscribed
+    const char* check = (const char*)zhash_lookup(self->views,view_name);
+    if (streq(check,"true")){
+        fprintf(stderr,"view[%s] already subscribed!\n",view_name);
+        return;
+    }
+    zhash_delete(self->views,view_name);
+    zhash_insert(self->views,view_name,"true");
+    check = (const char*)zhash_lookup(self->views,view_name);
+
     zmsg_t* msg = appnet_msg_create_generic_string_list_message(APPNET_MSG_SUBSCRIBE_VIEW,1,view_name);
     whisper_to_app(self,msg);
-    join_group(self,view_name);
+    char* group_name = appnet_application_zyre_group_name(self,view_name);
+    join_group(self,group_name);
+    free(group_name);
 }
 
 //  subscribe to multiple views on this application
@@ -441,16 +482,37 @@ void
         fprintf(stderr,"unknown view[%s] to unsubscribe from! ignoring!\n",view_name);
         return;
     }
+
+    const char* check = zhash_lookup(self->views,view_name);
+    if (streq(check,"false")){
+        fprintf(stderr,"tried to unsubscribe from view[%s] you did not subscribe!",view_name);
+        return;
+    }
+
     zmsg_t* msg = appnet_msg_create_generic_string_list_message(APPNET_MSG_UNSUBSCRIBE_VIEW,1,view_name);
     whisper_to_app(self,msg);
-    leave_group(self,view_name);
+    char* group_name = appnet_application_zyre_group_name(self,view_name);
+    leave_group(self,group_name);
+
+    zhash_delete(self->views,view_name);
+    zhash_insert(self->views,view_name,"false");
+    free(group_name);
 }
 
 //  remote: unsubscribe from all views of this application
 void
     appnet_application_remote_unsubscribe_all (appnet_application_t *self)
 {
-    
+    assert(self);
+
+    //iterate over views-hashtable and see what views are activated        
+    zlist_t* keys = zhash_keys(self->views);
+    for (char* view_name=zlist_first(keys);view_name!=NULL;view_name=zlist_next(keys)){
+        const char* check = zhash_lookup(self->views,view_name);
+        if (streq(check,"true")){
+            appnet_application_remote_unsubscribe_view(self,view_name);
+        }
+    }
 }
 
 //  remote: trigger action (string)
