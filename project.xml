@@ -6,7 +6,7 @@
     check_license_years = "0"
     email = "thomas.trocha@gmail.com"
     url = "https://thomas.trocha.com"
-    repository = "http://ttrocha@nas-02:3000/ttrocha/application_net.git"
+    repository = "https://github.com/dertom95/application_network.git"
     unique_class_name = "0"
     headerext = "h"
     >
