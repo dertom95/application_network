@@ -75,6 +75,7 @@ endif #ENABLE_APPLICATION_NETWORK_SELFTEST
 # Install api files into /usr/local/share/zproject
 apidir = @datadir@/zproject/application_network
 dist_api_DATA = \
+    api/python_cffi.slurp \
     api/appnet.api \
     api/appnet_application.api \
     api/appnet_client.api \

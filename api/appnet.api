@@ -10,7 +10,7 @@
 
     <method name="set_timeout">
         Set timeout
-        <argument name = "timeout" type="real"/>
+        <argument name = "timeout" type="real" size="4"/>
     </method>
 
     <method name="is_application">

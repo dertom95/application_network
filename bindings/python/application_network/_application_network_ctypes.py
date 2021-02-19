@@ -7,7 +7,21 @@ from __future__ import print_function
 import os, sys
 from ctypes import *
 from ctypes.util import find_library
+import zyre
 import czmq
+
+# load libc to access free, etc.
+libcpath = find_library("c")
+if not libcpath:
+    raise ImportError("Unable to find libc")
+libc = cdll.LoadLibrary(libcpath)
+libc.free.argtypes = [c_void_p]
+libc.free.restype = None
+
+def return_fresh_string(char_p):
+    s = string_at(char_p)
+    libc.free(char_p)
+    return s
 
 # application_network
 lib = None
@@ -43,32 +57,97 @@ if not lib:
             raise ImportError("Unable to find libapplication_network")
         lib = cdll.LoadLibrary(libpath)
 
-class appnet_t(Structure):
-    pass # Empty - only for type checking
-appnet_p = POINTER(appnet_t)
-
 class appnet_application_t(Structure):
     pass # Empty - only for type checking
 appnet_application_p = POINTER(appnet_application_t)
 
+class appnet_view_context_t(Structure):
+    pass # Empty - only for type checking
+appnet_view_context_p = POINTER(appnet_view_context_t)
+
+class appnet_client_t(Structure):
+    pass # Empty - only for type checking
+appnet_client_p = POINTER(appnet_client_t)
+
+class appnet_t(Structure):
+    pass # Empty - only for type checking
+appnet_p = POINTER(appnet_t)
+
+class zyre_event_t(Structure):
+    pass # Empty - only for type checking
+zyre_event_p = POINTER(zyre_event_t)
+
 
 # appnet
+appnet_on_view_request = CFUNCTYPE(None, appnet_application_p, appnet_view_context_p)
+appnet_on_view_received = CFUNCTYPE(None, appnet_application_p, c_char_p, c_void_p, c_size_t, c_void_p)
+appnet_on_app_enter = CFUNCTYPE(None, appnet_application_p, c_void_p)
+appnet_on_client_enter = CFUNCTYPE(None, appnet_client_p, c_void_p)
+appnet_on_action_triggered = CFUNCTYPE(None, c_char_p, c_char_p, c_ubyte, c_void_p, c_void_p)
+appnet_on_action_triggered_data = CFUNCTYPE(None, c_char_p, c_void_p, c_size_t, c_ubyte, c_void_p, c_void_p)
+appnet_on_client_enter = CFUNCTYPE(None, appnet_client_p, c_void_p)
+appnet_on_client_exit = CFUNCTYPE(None, appnet_client_p, c_void_p)
+appnet_on_app_exit = CFUNCTYPE(None, appnet_application_p, c_void_p)
 lib.appnet_new.restype = appnet_p
 lib.appnet_new.argtypes = [c_char_p]
 lib.appnet_destroy.restype = None
 lib.appnet_destroy.argtypes = [POINTER(appnet_p)]
-lib.appnet_is_application_type.restype = c_bool
-lib.appnet_is_application_type.argtypes = [appnet_p]
-lib.appnet_set_application_type.restype = None
-lib.appnet_set_application_type.argtypes = [appnet_p]
+lib.appnet_set_timeout.restype = None
+lib.appnet_set_timeout.argtypes = [appnet_p, c_float]
+lib.appnet_is_application.restype = c_bool
+lib.appnet_is_application.argtypes = [appnet_p]
+lib.appnet_set_application.restype = appnet_application_p
+lib.appnet_set_application.argtypes = [appnet_p]
 lib.appnet_get_application.restype = appnet_application_p
 lib.appnet_get_application.argtypes = [appnet_p]
-lib.appnet_recive_event.restype = None
-lib.appnet_recive_event.argtypes = [appnet_p]
+lib.appnet_is_client.restype = c_bool
+lib.appnet_is_client.argtypes = [appnet_p]
+lib.appnet_set_client.restype = appnet_client_p
+lib.appnet_set_client.argtypes = [appnet_p]
+lib.appnet_get_client.restype = appnet_client_p
+lib.appnet_get_client.argtypes = [appnet_p]
+lib.appnet_process_views.restype = None
+lib.appnet_process_views.argtypes = [appnet_p]
+lib.appnet_receive_event.restype = c_ubyte
+lib.appnet_receive_event.argtypes = [appnet_p]
+lib.appnet_receive_all_events.restype = None
+lib.appnet_receive_all_events.argtypes = [appnet_p]
 lib.appnet_start.restype = None
 lib.appnet_start.argtypes = [appnet_p]
 lib.appnet_stop.restype = None
 lib.appnet_stop.argtypes = [appnet_p]
+lib.appnet_node_signature.restype = POINTER(c_char)
+lib.appnet_node_signature.argtypes = [appnet_p]
+lib.appnet_get_zyre_node.restype = zyre.zyre_p
+lib.appnet_get_zyre_node.argtypes = [appnet_p]
+lib.appnet_get_remote_client.restype = appnet_client_p
+lib.appnet_get_remote_client.argtypes = [appnet_p, c_char_p]
+lib.appnet_get_remote_application.restype = appnet_application_p
+lib.appnet_get_remote_application.argtypes = [appnet_p, c_char_p]
+lib.appnet_get_remote_applications.restype = czmq.zhash_p
+lib.appnet_get_remote_applications.argtypes = [appnet_p]
+lib.appnet_get_remote_application_names.restype = czmq.zlist_p
+lib.appnet_get_remote_application_names.argtypes = [appnet_p]
+lib.appnet_remote_send_string.restype = None
+lib.appnet_remote_send_string.argtypes = [appnet_p, c_char_p, c_bool, c_char_p, c_char_p]
+lib.appnet_remote_send_buffer.restype = None
+lib.appnet_remote_send_buffer.argtypes = [appnet_p, c_char_p, c_bool, c_char_p, c_void_p, c_size_t]
+lib.appnet_set_on_client_exit.restype = None
+lib.appnet_set_on_client_exit.argtypes = [appnet_p, appnet_on_client_exit, c_void_p]
+lib.appnet_set_on_app_exit.restype = None
+lib.appnet_set_on_app_exit.argtypes = [appnet_p, appnet_on_app_exit, c_void_p]
+lib.appnet_set_on_app_enter.restype = None
+lib.appnet_set_on_app_enter.argtypes = [appnet_p, appnet_on_app_enter, c_void_p]
+lib.appnet_set_on_client_enter.restype = None
+lib.appnet_set_on_client_enter.argtypes = [appnet_p, appnet_on_client_enter, c_void_p]
+lib.appnet_set_on_action_triggered.restype = None
+lib.appnet_set_on_action_triggered.argtypes = [appnet_p, appnet_on_action_triggered, c_void_p]
+lib.appnet_set_on_action_triggered_data.restype = None
+lib.appnet_set_on_action_triggered_data.argtypes = [appnet_p, appnet_on_action_triggered_data, c_void_p]
+lib.appnet_set_on_view_received.restype = None
+lib.appnet_set_on_view_received.argtypes = [appnet_p, appnet_on_view_received, c_void_p]
+lib.appnet_set_on_view_request.restype = None
+lib.appnet_set_on_view_request.argtypes = [appnet_p, appnet_on_view_request]
 lib.appnet_test.restype = None
 lib.appnet_test.argtypes = [c_bool]
 
@@ -120,17 +199,23 @@ class Appnet(object):
         "Determine whether the object is valid by converting to boolean" # Python 2
         return self._as_parameter_.__nonzero__()
 
-    def is_application_type(self):
+    def set_timeout(self, timeout):
+        """
+        Set timeout
+        """
+        return lib.appnet_set_timeout(self._as_parameter_, timeout)
+
+    def is_application(self):
         """
         Is this appnet an application?
         """
-        return lib.appnet_is_application_type(self._as_parameter_)
+        return lib.appnet_is_application(self._as_parameter_)
 
-    def set_application_type(self):
+    def set_application(self):
         """
         Set the current appnet to be an application
         """
-        return lib.appnet_set_application_type(self._as_parameter_)
+        return AppnetApplication(lib.appnet_set_application(self._as_parameter_), False)
 
     def get_application(self):
         """
@@ -138,11 +223,42 @@ class Appnet(object):
         """
         return AppnetApplication(lib.appnet_get_application(self._as_parameter_), False)
 
-    def recive_event(self):
+    def is_client(self):
         """
-        debug: print zyre-event
+        Is this appnet a client?
         """
-        return lib.appnet_recive_event(self._as_parameter_)
+        return lib.appnet_is_client(self._as_parameter_)
+
+    def set_client(self):
+        """
+        Set the current appnet to be a client
+        """
+        return AppnetClient(lib.appnet_set_client(self._as_parameter_), False)
+
+    def get_client(self):
+        """
+        Get the client-object
+        """
+        return AppnetClient(lib.appnet_get_client(self._as_parameter_), False)
+
+    def process_views(self):
+        """
+        check if views needs to trigger and call the callback
+        """
+        return lib.appnet_process_views(self._as_parameter_)
+
+    def receive_event(self):
+        """
+        Try to receive message. Or none if timeouted...(return type 0)
+This method will call appropriate callbacks
+        """
+        return lib.appnet_receive_event(self._as_parameter_)
+
+    def receive_all_events(self):
+        """
+        Receive all messages and call the corresponding callbacks
+        """
+        return lib.appnet_receive_all_events(self._as_parameter_)
 
     def start(self):
         """
@@ -156,6 +272,106 @@ class Appnet(object):
         """
         return lib.appnet_stop(self._as_parameter_)
 
+    def node_signature(self):
+        """
+        returns info for underlying application or client
+        """
+        return return_fresh_string(lib.appnet_node_signature(self._as_parameter_))
+
+    def get_zyre_node(self):
+        """
+        Get underlying zyre-node
+        """
+        return zyre.Zyre(lib.appnet_get_zyre_node(self._as_parameter_), False)
+
+    def get_remote_client(self, client_uuid):
+        """
+        get client by uuid
+        """
+        return AppnetClient(lib.appnet_get_remote_client(self._as_parameter_, client_uuid), False)
+
+    def get_remote_application(self, application_uuid):
+        """
+        get application by uuid
+        """
+        return AppnetApplication(lib.appnet_get_remote_application(self._as_parameter_, application_uuid), False)
+
+    def get_remote_applications(self):
+        """
+        Return all connected applications
+        """
+        return czmq.Zhash(lib.appnet_get_remote_applications(self._as_parameter_), False)
+
+    def get_remote_application_names(self):
+        """
+        Return all connection application names
+        """
+        return czmq.Zlist(lib.appnet_get_remote_application_names(self._as_parameter_), False)
+
+    def remote_send_string(self, msg_type, to_peer, recipent, string_data):
+        """
+        custom: send string to application.
+if to_peer=true: data is whispered to get_peer_id
+if to_peer=false: data is shouted in group
+        """
+        return lib.appnet_remote_send_string(self._as_parameter_, msg_type, to_peer, recipent, string_data)
+
+    def remote_send_buffer(self, msg_type, to_peer, recipent, data, size):
+        """
+        custom: send buffer(void* size) to application
+if to_peer=true: data is whispered to get_peer_id
+if to_peer=false: data is shouted in group
+        """
+        return lib.appnet_remote_send_buffer(self._as_parameter_, msg_type, to_peer, recipent, data, size)
+
+    def set_on_client_exit(self, callback, userdata):
+        """
+
+        """
+        return lib.appnet_set_on_client_exit(self._as_parameter_, callback, userdata)
+
+    def set_on_app_exit(self, callback, userdata):
+        """
+
+        """
+        return lib.appnet_set_on_app_exit(self._as_parameter_, callback, userdata)
+
+    def set_on_app_enter(self, callback, userdata):
+        """
+
+        """
+        return lib.appnet_set_on_app_enter(self._as_parameter_, callback, userdata)
+
+    def set_on_client_enter(self, callback, userdata):
+        """
+
+        """
+        return lib.appnet_set_on_client_enter(self._as_parameter_, callback, userdata)
+
+    def set_on_action_triggered(self, callback, userdata):
+        """
+
+        """
+        return lib.appnet_set_on_action_triggered(self._as_parameter_, callback, userdata)
+
+    def set_on_action_triggered_data(self, callback, userdata):
+        """
+
+        """
+        return lib.appnet_set_on_action_triggered_data(self._as_parameter_, callback, userdata)
+
+    def set_on_view_received(self, callback, userdata):
+        """
+
+        """
+        return lib.appnet_set_on_view_received(self._as_parameter_, callback, userdata)
+
+    def set_on_view_request(self, callback):
+        """
+
+        """
+        return lib.appnet_set_on_view_request(self._as_parameter_, callback)
+
     @staticmethod
     def test(verbose):
         """
@@ -166,17 +382,65 @@ class Appnet(object):
 
 # appnet_application
 lib.appnet_application_new.restype = appnet_application_p
-lib.appnet_application_new.argtypes = []
+lib.appnet_application_new.argtypes = [appnet_p]
 lib.appnet_application_destroy.restype = None
 lib.appnet_application_destroy.argtypes = [POINTER(appnet_application_p)]
+lib.appnet_application_new_from_zyre.restype = appnet_application_p
+lib.appnet_application_new_from_zyre.argtypes = [zyre_event_p, appnet_p]
+lib.appnet_application_has_action.restype = c_bool
+lib.appnet_application_has_action.argtypes = [appnet_application_p, c_char_p]
+lib.appnet_application_get_name.restype = c_char_p
+lib.appnet_application_get_name.argtypes = [appnet_application_p]
+lib.appnet_application_set_name.restype = None
+lib.appnet_application_set_name.argtypes = [appnet_application_p, c_char_p]
+lib.appnet_application_get_peer_id.restype = c_char_p
+lib.appnet_application_get_peer_id.argtypes = [appnet_application_p]
+lib.appnet_application_set_peer_id.restype = None
+lib.appnet_application_set_peer_id.argtypes = [appnet_application_p, c_char_p]
+lib.appnet_application_parent.restype = appnet_p
+lib.appnet_application_parent.argtypes = [appnet_application_p]
+lib.appnet_application_print.restype = None
+lib.appnet_application_print.argtypes = [appnet_application_p]
 lib.appnet_application_add_view.restype = c_bool
-lib.appnet_application_add_view.argtypes = [appnet_application_p, c_char_p]
-lib.appnet_application_get_view_list.restype = czmq.zlist_p
-lib.appnet_application_get_view_list.argtypes = [appnet_application_p]
-lib.appnet_application_add_action.restype = c_bool
-lib.appnet_application_add_action.argtypes = [appnet_application_p, c_char_p]
+lib.appnet_application_add_view.argtypes = [appnet_application_p, c_char_p, c_int]
+lib.appnet_application_add_views.restype = None
+lib.appnet_application_add_views.argtypes = [appnet_application_p, c_int, c_ubyte, c_char_p]
+lib.appnet_application_has_view.restype = c_bool
+lib.appnet_application_has_view.argtypes = [appnet_application_p, c_char_p]
+lib.appnet_application_zyre_group_name.restype = POINTER(c_char)
+lib.appnet_application_zyre_group_name.argtypes = [appnet_application_p, c_char_p]
+lib.appnet_application_add_subscriber.restype = None
+lib.appnet_application_add_subscriber.argtypes = [appnet_application_p, c_char_p, c_char_p]
+lib.appnet_application_remove_subscriber.restype = None
+lib.appnet_application_remove_subscriber.argtypes = [appnet_application_p, c_char_p, c_char_p]
+lib.appnet_application_remove_subscriber_from_views.restype = None
+lib.appnet_application_remove_subscriber_from_views.argtypes = [appnet_application_p, c_char_p]
+lib.appnet_application_get_view_keys.restype = czmq.zlist_p
+lib.appnet_application_get_view_keys.argtypes = [appnet_application_p]
+lib.appnet_application_get_view_hashtable.restype = czmq.zhash_p
+lib.appnet_application_get_view_hashtable.argtypes = [appnet_application_p]
 lib.appnet_application_get_action_list.restype = czmq.zlist_p
 lib.appnet_application_get_action_list.argtypes = [appnet_application_p]
+lib.appnet_application_add_action.restype = c_bool
+lib.appnet_application_add_action.argtypes = [appnet_application_p, c_char_p]
+lib.appnet_application_add_actions.restype = None
+lib.appnet_application_add_actions.argtypes = [appnet_application_p, c_ubyte, c_char_p]
+lib.appnet_application_remote_subscribe_view.restype = None
+lib.appnet_application_remote_subscribe_view.argtypes = [appnet_application_p, c_char_p]
+lib.appnet_application_remote_subscribe_views.restype = None
+lib.appnet_application_remote_subscribe_views.argtypes = [appnet_application_p, c_ubyte, c_char_p]
+lib.appnet_application_remote_unsubscribe_view.restype = None
+lib.appnet_application_remote_unsubscribe_view.argtypes = [appnet_application_p, c_char_p]
+lib.appnet_application_remote_unsubscribe_all.restype = None
+lib.appnet_application_remote_unsubscribe_all.argtypes = [appnet_application_p]
+lib.appnet_application_remote_trigger_action.restype = None
+lib.appnet_application_remote_trigger_action.argtypes = [appnet_application_p, c_char_p, c_char_p]
+lib.appnet_application_remote_trigger_action_data.restype = None
+lib.appnet_application_remote_trigger_action_data.argtypes = [appnet_application_p, c_char_p, c_void_p, c_size_t]
+lib.appnet_application_remote_reconnect.restype = None
+lib.appnet_application_remote_reconnect.argtypes = [appnet_application_p]
+lib.appnet_application_to_metadata_json_string.restype = POINTER(c_char)
+lib.appnet_application_to_metadata_json_string.argtypes = [appnet_application_p]
 lib.appnet_application_test.restype = None
 lib.appnet_application_test.argtypes = [c_bool]
 
@@ -197,8 +461,8 @@ class AppnetApplication(object):
             self._as_parameter_ = args[0] # Conversion from raw type to binding
             self.allow_destruct = args[1] # This is a 'fresh' value, owned by us
         else:
-            assert(len(args) == 0)
-            self._as_parameter_ = lib.appnet_application_new() # Creation of new raw type
+            assert(len(args) == 1)
+            self._as_parameter_ = lib.appnet_application_new(args[0]) # Creation of new raw type
             self.allow_destruct = True
 
     def __del__(self):
@@ -228,23 +492,108 @@ class AppnetApplication(object):
         "Determine whether the object is valid by converting to boolean" # Python 2
         return self._as_parameter_.__nonzero__()
 
-    def add_view(self, view):
+    @staticmethod
+    def new_from_zyre(evt, parent):
+        """
+        Create a new appnet_application.
+        """
+        return AppnetApplication(lib.appnet_application_new_from_zyre(evt, parent), True)
+
+    def has_action(self, action_name):
+        """
+        checks if this action exists in this application
+        """
+        return lib.appnet_application_has_action(self._as_parameter_, action_name)
+
+    def get_name(self):
+        """
+        get application name
+        """
+        return lib.appnet_application_get_name(self._as_parameter_)
+
+    def set_name(self, application_name):
+        """
+        set application name
+        """
+        return lib.appnet_application_set_name(self._as_parameter_, application_name)
+
+    def get_peer_id(self):
+        """
+        get zyre peer id
+        """
+        return lib.appnet_application_get_peer_id(self._as_parameter_)
+
+    def set_peer_id(self, peer_id):
+        """
+        set zyre peer id
+        """
+        return lib.appnet_application_set_peer_id(self._as_parameter_, peer_id)
+
+    def parent(self):
+        """
+        return parent appnet-node
+        """
+        return Appnet(lib.appnet_application_parent(self._as_parameter_), False)
+
+    def print(self):
+        """
+        print application data
+        """
+        return lib.appnet_application_print(self._as_parameter_)
+
+    def add_view(self, view, interval):
         """
         add application view ( appnet needs to be set as application-type )
         """
-        return lib.appnet_application_add_view(self._as_parameter_, view)
+        return lib.appnet_application_add_view(self._as_parameter_, view, interval)
 
-    def get_view_list(self):
+    def add_views(self, interval, view_amount, view, *args):
         """
-        get zlist of all views
+        add multiple views to applications
         """
-        return czmq.Zlist(lib.appnet_application_get_view_list(self._as_parameter_), False)
+        return lib.appnet_application_add_views(self._as_parameter_, interval, view_amount, view, *args)
 
-    def add_action(self, action):
+    def has_view(self, view_name):
         """
-        add application action ( appnet needs to be set as application-type )
+        checks if this viewname exists in this application
         """
-        return lib.appnet_application_add_action(self._as_parameter_, action)
+        return lib.appnet_application_has_view(self._as_parameter_, view_name)
+
+    def zyre_group_name(self, view_name):
+        """
+        return full zyre-groupname [peer-id].[viewname]
+        """
+        return return_fresh_string(lib.appnet_application_zyre_group_name(self._as_parameter_, view_name))
+
+    def add_subscriber(self, viewname, peer_id):
+        """
+        add this user(peer-id) to be subscriber on the specified view
+        """
+        return lib.appnet_application_add_subscriber(self._as_parameter_, viewname, peer_id)
+
+    def remove_subscriber(self, viewname, peer_id):
+        """
+        remove this user(peer-id) from subscriber-list of the specified view
+        """
+        return lib.appnet_application_remove_subscriber(self._as_parameter_, viewname, peer_id)
+
+    def remove_subscriber_from_views(self, peer_id):
+        """
+        remove subscriber from all views
+        """
+        return lib.appnet_application_remove_subscriber_from_views(self._as_parameter_, peer_id)
+
+    def get_view_keys(self):
+        """
+        get zlist of all views-keys
+        """
+        return czmq.Zlist(lib.appnet_application_get_view_keys(self._as_parameter_), False)
+
+    def get_view_hashtable(self):
+        """
+        return the view-hashtable
+        """
+        return czmq.Zhash(lib.appnet_application_get_view_hashtable(self._as_parameter_), False)
 
     def get_action_list(self):
         """
@@ -252,12 +601,418 @@ class AppnetApplication(object):
         """
         return czmq.Zlist(lib.appnet_application_get_action_list(self._as_parameter_), False)
 
+    def add_action(self, action):
+        """
+        add application action ( appnet needs to be set as application-type )
+        """
+        return lib.appnet_application_add_action(self._as_parameter_, action)
+
+    def add_actions(self, action_amount, action, *args):
+        """
+        add multiple views to applications
+        """
+        return lib.appnet_application_add_actions(self._as_parameter_, action_amount, action, *args)
+
+    def remote_subscribe_view(self, view_name):
+        """
+        remote: subscribe for this application's view
+        """
+        return lib.appnet_application_remote_subscribe_view(self._as_parameter_, view_name)
+
+    def remote_subscribe_views(self, view_amount, views, *args):
+        """
+        subscribe to multiple views on this application
+        """
+        return lib.appnet_application_remote_subscribe_views(self._as_parameter_, view_amount, views, *args)
+
+    def remote_unsubscribe_view(self, view_name):
+        """
+        remote: unsubscribe from specified view
+        """
+        return lib.appnet_application_remote_unsubscribe_view(self._as_parameter_, view_name)
+
+    def remote_unsubscribe_all(self):
+        """
+        remote: unsubscribe from all views of this application
+        """
+        return lib.appnet_application_remote_unsubscribe_all(self._as_parameter_)
+
+    def remote_trigger_action(self, action_name, args):
+        """
+        remote: trigger action
+        """
+        return lib.appnet_application_remote_trigger_action(self._as_parameter_, action_name, args)
+
+    def remote_trigger_action_data(self, action_name, data, size):
+        """
+        remote: trigger action
+        """
+        return lib.appnet_application_remote_trigger_action_data(self._as_parameter_, action_name, data, size)
+
+    def remote_reconnect(self):
+        """
+        Reconnect to subscribed views
+        """
+        return lib.appnet_application_remote_reconnect(self._as_parameter_)
+
+    def to_metadata_json_string(self):
+        """
+        get application meta data a string-json
+        """
+        return return_fresh_string(lib.appnet_application_to_metadata_json_string(self._as_parameter_))
+
     @staticmethod
     def test(verbose):
         """
         Self test of this class.
         """
         return lib.appnet_application_test(verbose)
+
+
+# appnet_client
+lib.appnet_client_new.restype = appnet_client_p
+lib.appnet_client_new.argtypes = [appnet_p]
+lib.appnet_client_destroy.restype = None
+lib.appnet_client_destroy.argtypes = [POINTER(appnet_client_p)]
+lib.appnet_client_new_from_zyre.restype = appnet_client_p
+lib.appnet_client_new_from_zyre.argtypes = [zyre_event_p]
+lib.appnet_client_to_metadata_json_string.restype = POINTER(c_char)
+lib.appnet_client_to_metadata_json_string.argtypes = [appnet_client_p]
+lib.appnet_client_get_name.restype = c_char_p
+lib.appnet_client_get_name.argtypes = [appnet_client_p]
+lib.appnet_client_set_name.restype = None
+lib.appnet_client_set_name.argtypes = [appnet_client_p, c_char_p]
+lib.appnet_client_get_peer_id.restype = c_char_p
+lib.appnet_client_get_peer_id.argtypes = [appnet_client_p]
+lib.appnet_client_print.restype = None
+lib.appnet_client_print.argtypes = [appnet_client_p]
+lib.appnet_client_parent.restype = appnet_p
+lib.appnet_client_parent.argtypes = [appnet_client_p]
+lib.appnet_client_test.restype = None
+lib.appnet_client_test.argtypes = [c_bool]
+
+class AppnetClient(object):
+    """
+
+    """
+
+    allow_destruct = False
+    def __init__(self, *args):
+        """
+        Appnet-Client
+        """
+        if len(args) == 2 and type(args[0]) is c_void_p and isinstance(args[1], bool):
+            self._as_parameter_ = cast(args[0], appnet_client_p) # Conversion from raw type to binding
+            self.allow_destruct = args[1] # This is a 'fresh' value, owned by us
+        elif len(args) == 2 and type(args[0]) is appnet_client_p and isinstance(args[1], bool):
+            self._as_parameter_ = args[0] # Conversion from raw type to binding
+            self.allow_destruct = args[1] # This is a 'fresh' value, owned by us
+        else:
+            assert(len(args) == 1)
+            self._as_parameter_ = lib.appnet_client_new(args[0]) # Creation of new raw type
+            self.allow_destruct = True
+
+    def __del__(self):
+        """
+        Destroy the appnet_client.
+        """
+        if self.allow_destruct:
+            lib.appnet_client_destroy(byref(self._as_parameter_))
+
+    def __eq__(self, other):
+        if type(other) == type(self):
+            return other.c_address() == self.c_address()
+        elif type(other) == c_void_p:
+            return other.value == self.c_address()
+
+    def c_address(self):
+        """
+        Return the address of the object pointer in c.  Useful for comparison.
+        """
+        return addressof(self._as_parameter_.contents)
+
+    def __bool__(self):
+        "Determine whether the object is valid by converting to boolean" # Python 3
+        return self._as_parameter_.__bool__()
+
+    def __nonzero__(self):
+        "Determine whether the object is valid by converting to boolean" # Python 2
+        return self._as_parameter_.__nonzero__()
+
+    @staticmethod
+    def new_from_zyre(zyre_evt):
+        """
+        Create a new appnet_client.
+        """
+        return AppnetClient(lib.appnet_client_new_from_zyre(zyre_evt), True)
+
+    def to_metadata_json_string(self):
+        """
+
+        """
+        return return_fresh_string(lib.appnet_client_to_metadata_json_string(self._as_parameter_))
+
+    def get_name(self):
+        """
+        get client name
+        """
+        return lib.appnet_client_get_name(self._as_parameter_)
+
+    def set_name(self, name):
+        """
+        set client name
+        """
+        return lib.appnet_client_set_name(self._as_parameter_, name)
+
+    def get_peer_id(self):
+        """
+        get client name
+        """
+        return lib.appnet_client_get_peer_id(self._as_parameter_)
+
+    def print(self):
+        """
+        print the client info
+        """
+        return lib.appnet_client_print(self._as_parameter_)
+
+    def parent(self):
+        """
+        return parent appnet-node
+        """
+        return Appnet(lib.appnet_client_parent(self._as_parameter_), False)
+
+    @staticmethod
+    def test(verbose):
+        """
+        Self test of this class.
+        """
+        return lib.appnet_client_test(verbose)
+
+
+# appnet_msg
+lib.appnet_msg_create_trigger_action.restype = czmq.zmsg_p
+lib.appnet_msg_create_trigger_action.argtypes = [c_char_p, c_char_p]
+lib.appnet_msg_create_trigger_action_data.restype = czmq.zmsg_p
+lib.appnet_msg_create_trigger_action_data.argtypes = [c_char_p, c_void_p, c_size_t]
+lib.appnet_msg_create_generic_string_list_message.restype = czmq.zmsg_p
+lib.appnet_msg_create_generic_string_list_message.argtypes = [c_char_p, c_ubyte, c_char_p]
+lib.appnet_msg_test.restype = None
+lib.appnet_msg_test.argtypes = [c_bool]
+
+class AppnetMsg(object):
+    """
+
+    """
+
+    allow_destruct = False
+    def __eq__(self, other):
+        if type(other) == type(self):
+            return other.c_address() == self.c_address()
+        elif type(other) == c_void_p:
+            return other.value == self.c_address()
+
+    def c_address(self):
+        """
+        Return the address of the object pointer in c.  Useful for comparison.
+        """
+        return addressof(self._as_parameter_.contents)
+
+    def __bool__(self):
+        "Determine whether the object is valid by converting to boolean" # Python 3
+        return self._as_parameter_.__bool__()
+
+    def __nonzero__(self):
+        "Determine whether the object is valid by converting to boolean" # Python 2
+        return self._as_parameter_.__nonzero__()
+
+    @staticmethod
+    def create_trigger_action(action_name, args):
+        """
+        Create trigger action msg (as zmsg) with string argument
+        """
+        return czmq.Zmsg(lib.appnet_msg_create_trigger_action(action_name, args), True)
+
+    @staticmethod
+    def create_trigger_action_data(action_name, data, size):
+        """
+        Create trigger action msg (as zmsg) with data-buffer
+        """
+        return czmq.Zmsg(lib.appnet_msg_create_trigger_action_data(action_name, data, size), True)
+
+    @staticmethod
+    def create_generic_string_list_message(msg_type, amount, string_data, *args):
+        """
+        Create a generic zmsg with multiple strings packed as individual zframes.
+        """
+        return czmq.Zmsg(lib.appnet_msg_create_generic_string_list_message(msg_type, amount, string_data, *args), True)
+
+    @staticmethod
+    def test(verbose):
+        """
+        Self test of this class.
+        """
+        return lib.appnet_msg_test(verbose)
+
+
+# appnet_view_context
+lib.appnet_view_context_new.restype = appnet_view_context_p
+lib.appnet_view_context_new.argtypes = [c_char_p]
+lib.appnet_view_context_destroy.restype = None
+lib.appnet_view_context_destroy.argtypes = [POINTER(appnet_view_context_p)]
+lib.appnet_view_context_viewname.restype = c_char_p
+lib.appnet_view_context_viewname.argtypes = [appnet_view_context_p]
+lib.appnet_view_context_next_triggertime.restype = c_long
+lib.appnet_view_context_next_triggertime.argtypes = [appnet_view_context_p]
+lib.appnet_view_context_set_interval.restype = None
+lib.appnet_view_context_set_interval.argtypes = [appnet_view_context_p, c_int]
+lib.appnet_view_context_userdata.restype = c_void_p
+lib.appnet_view_context_userdata.argtypes = [appnet_view_context_p]
+lib.appnet_view_context_set_userdata.restype = None
+lib.appnet_view_context_set_userdata.argtypes = [appnet_view_context_p, c_void_p]
+lib.appnet_view_context_add_subscriber.restype = None
+lib.appnet_view_context_add_subscriber.argtypes = [appnet_view_context_p, c_char_p]
+lib.appnet_view_context_remove_subscriber.restype = None
+lib.appnet_view_context_remove_subscriber.argtypes = [appnet_view_context_p, c_char_p]
+lib.appnet_view_context_get_subscriber_map.restype = czmq.zhash_p
+lib.appnet_view_context_get_subscriber_map.argtypes = [appnet_view_context_p]
+lib.appnet_view_context_get_amount_subscribers.restype = c_int
+lib.appnet_view_context_get_amount_subscribers.argtypes = [appnet_view_context_p]
+lib.appnet_view_context_prepare_next_interval.restype = None
+lib.appnet_view_context_prepare_next_interval.argtypes = [appnet_view_context_p]
+lib.appnet_view_context_set_data.restype = None
+lib.appnet_view_context_set_data.argtypes = [appnet_view_context_p, c_void_p, c_size_t]
+lib.appnet_view_context_get_zmsg.restype = czmq.zmsg_p
+lib.appnet_view_context_get_zmsg.argtypes = [appnet_view_context_p]
+lib.appnet_view_context_test.restype = None
+lib.appnet_view_context_test.argtypes = [c_bool]
+
+class AppnetViewContext(object):
+    """
+
+    """
+
+    allow_destruct = False
+    def __init__(self, *args):
+        """
+        Create a new appnet_view_context.
+        """
+        if len(args) == 2 and type(args[0]) is c_void_p and isinstance(args[1], bool):
+            self._as_parameter_ = cast(args[0], appnet_view_context_p) # Conversion from raw type to binding
+            self.allow_destruct = args[1] # This is a 'fresh' value, owned by us
+        elif len(args) == 2 and type(args[0]) is appnet_view_context_p and isinstance(args[1], bool):
+            self._as_parameter_ = args[0] # Conversion from raw type to binding
+            self.allow_destruct = args[1] # This is a 'fresh' value, owned by us
+        else:
+            assert(len(args) == 1)
+            self._as_parameter_ = lib.appnet_view_context_new(args[0]) # Creation of new raw type
+            self.allow_destruct = True
+
+    def __del__(self):
+        """
+        Destroy the appnet_view_context.
+        """
+        if self.allow_destruct:
+            lib.appnet_view_context_destroy(byref(self._as_parameter_))
+
+    def __eq__(self, other):
+        if type(other) == type(self):
+            return other.c_address() == self.c_address()
+        elif type(other) == c_void_p:
+            return other.value == self.c_address()
+
+    def c_address(self):
+        """
+        Return the address of the object pointer in c.  Useful for comparison.
+        """
+        return addressof(self._as_parameter_.contents)
+
+    def __bool__(self):
+        "Determine whether the object is valid by converting to boolean" # Python 3
+        return self._as_parameter_.__bool__()
+
+    def __nonzero__(self):
+        "Determine whether the object is valid by converting to boolean" # Python 2
+        return self._as_parameter_.__nonzero__()
+
+    def viewname(self):
+        """
+        Get name of this view
+        """
+        return lib.appnet_view_context_viewname(self._as_parameter_)
+
+    def next_triggertime(self):
+        """
+        Get time this view is going to triggered (in ms)
+        """
+        return lib.appnet_view_context_next_triggertime(self._as_parameter_)
+
+    def set_interval(self, interval_in_ms):
+        """
+        Set interval for this view (in milliseconds)
+        """
+        return lib.appnet_view_context_set_interval(self._as_parameter_, interval_in_ms)
+
+    def userdata(self):
+        """
+        Get userdata
+        """
+        return c_void_p(lib.appnet_view_context_userdata(self._as_parameter_))
+
+    def set_userdata(self, userdata):
+        """
+        set userdata
+        """
+        return lib.appnet_view_context_set_userdata(self._as_parameter_, userdata)
+
+    def add_subscriber(self, peer_id):
+        """
+        set this user(peer-id) to be subscriber
+        """
+        return lib.appnet_view_context_add_subscriber(self._as_parameter_, peer_id)
+
+    def remove_subscriber(self, peer_id):
+        """
+        remove this user(peer-id) from subscriber-list
+        """
+        return lib.appnet_view_context_remove_subscriber(self._as_parameter_, peer_id)
+
+    def get_subscriber_map(self):
+        """
+        Get the hashtable of all subscrbiers on this view
+        """
+        return czmq.Zhash(lib.appnet_view_context_get_subscriber_map(self._as_parameter_), False)
+
+    def get_amount_subscribers(self):
+        """
+        Get amount of subscribers
+        """
+        return lib.appnet_view_context_get_amount_subscribers(self._as_parameter_)
+
+    def prepare_next_interval(self):
+        """
+        Setup data for next interval
+        """
+        return lib.appnet_view_context_prepare_next_interval(self._as_parameter_)
+
+    def set_data(self, data, size):
+        """
+        Set serialized view-data
+        """
+        return lib.appnet_view_context_set_data(self._as_parameter_, data, size)
+
+    def get_zmsg(self):
+        """
+        Get zmsg and clears internal zmsg-pointer to NULL
+        """
+        return czmq.Zmsg(lib.appnet_view_context_get_zmsg(self._as_parameter_), True)
+
+    @staticmethod
+    def test(verbose):
+        """
+        Self test of this class.
+        """
+        return lib.appnet_view_context_test(verbose)
 
 ################################################################################
 #  THIS FILE IS 100% GENERATED BY ZPROJECT; DO NOT EDIT EXCEPT EXPERIMENTALLY  #

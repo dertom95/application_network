@@ -5,7 +5,7 @@
     </constructor>
 
     <constructor name="new_from_zyre">
-        <argument name="evt" type="zyre_event"/>
+        <argument name="evt" type="zyre event"/>
         <argument name="parent" type="appnet"/>
     </constructor>
 
@@ -59,7 +59,7 @@
     <method name = "add_views">
         add multiple views to applications
         <argument name = "interval" type="integer">the interval(in ms) this view trigger its coresponding callback</argument>
-        <argument name = "view_amount" type="number">The amount of views to be added</argument>
+        <argument name = "view_amount" type="number" size="1">The amount of views to be added</argument>
         <!-- <argument name = "views" type = "va_list"/> -->
         <argument name = "view" type = "string" variadic = "1" />
     </method>
@@ -118,7 +118,7 @@
 
     <method name = "add_actions">
         add multiple views to applications
-        <argument name = "action_amount" type="number">The amount of actions to be added</argument>
+        <argument name = "action_amount" type="number"  size="1">The amount of actions to be added</argument>
         <!-- <argument name = "views" type = "va_list"/> -->
         <argument name = "action" type = "string" variadic = "1" />
     </method>    
@@ -133,7 +133,7 @@
 
     <method name = "remote_subscribe_views">
         subscribe to multiple views on this application
-        <argument name = "view_amount" type="number" />
+        <argument name = "view_amount" type="number" size="1" />
         <argument name = "views" type="string" variadic="1"/>
     </method>
 

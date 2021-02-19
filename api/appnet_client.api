@@ -5,7 +5,7 @@
     </constructor>
 
     <constructor name="new_from_zyre">
-        <argument name="zyre_evt" type="zyre_event"/>
+        <argument name="zyre_evt" type="zyre event"/>
     </constructor>
 
     <destructor/>

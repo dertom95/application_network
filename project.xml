@@ -6,7 +6,7 @@
     check_license_years = "0"
     email = "thomas.trocha@gmail.com"
     url = "https://thomas.trocha.com"
-    repository = "https://github.com/dertom/applcation-network"
+    repository = "http://ttrocha@nas-02:3000/ttrocha/application_net.git"
     unique_class_name = "0"
     headerext = "h"
     >
@@ -19,8 +19,7 @@
     <use project = "czmq"/>
     <use project = "zyre"/>
     <use project = "cJSON"/>
-
-
+    
     <!-- <use project = "czmq"/> -->
 
     <class name = "appnet" />
@@ -39,8 +38,16 @@
     <main name = "test_appnet_client" />
     <main name = "test_appnet_all" />
 
-    <!-- <target name = "python" /> -->
+    <target name = "python_cffi" />
+    <target name = "python" />
+    <!-- <target name = "java"/> -->
+    <!-- <target name = "java_msvc"/> -->
     <!-- <target name="docker"/> -->
+    <target name="docker"/>
+    <target name="travis"/>
+    <target name="rpi"/>
+    <target name="vs2017"/>
+    <target name="mingw32"/>
 
     <constant name = "APPNET_HEADER_IS_CLIENT" value = "appnet_is_client" state = "stable" type = "string">appnet client header</constant>
     <constant name = "APPNET_HEADER_CLIENT" value = "client_header" state = "stable" type = "string">appnet client header</constant>
