@@ -248,7 +248,7 @@ bool test_trigger_data_argument(appnet_t* app,appnet_t* client)
     return true;
 }
 
-bool test_subscribe_2(appnet_t* app,appnet_t* client){
+bool test_subscribe_reconnect(appnet_t* app,appnet_t* client){
     // get first application
     zlist_t* app_names = appnet_get_remote_application_names(client);
     appnet_application_t* remote_app = appnet_get_remote_application(client,zlist_first(app_names));
@@ -279,17 +279,24 @@ bool test_subscribe_2(appnet_t* app,appnet_t* client){
             printf("------------start again client -----------------------\n");
             // add another view
             appnet_start(client);
-            appnet_application_remote_subscribe_view(remote_app,"view2");
+            //appnet_application_remote_subscribe_view(remote_app,"view2");
         }
         appnet_receive_all_events(client);
     }
 }
 
+appnet_application_t* get_first_remote_app(appnet_t* appnet)
+{
+    // get first application
+    zlist_t* app_names = appnet_get_remote_application_names(appnet);
+    appnet_application_t* remote_app = appnet_get_remote_application(appnet,zlist_first(app_names));
+    return remote_app;
+}
+
 bool test_subscribe_multiple(appnet_t* app,appnet_t* client)
 {
     // get first application
-    zlist_t* app_names = appnet_get_remote_application_names(client);
-    appnet_application_t* remote_app = appnet_get_remote_application(client,zlist_first(app_names));
+    appnet_application_t* remote_app = get_first_remote_app(client);
 
     // client sends view-request
 //    appnet_application_remote_subscribe_view(remote_app,"globals.resources");
@@ -422,7 +429,7 @@ int main (int argc, char *argv [])
 //    test_enter_exit(test_subscribe_multiple,false);
  //   test_enter_exit(test_subscribe_multiple,true);
 
-    test_enter_exit(test_subscribe_2,false);
+    test_enter_exit(test_subscribe_reconnect,false);
 
     return 0;
 }

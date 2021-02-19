@@ -159,6 +159,9 @@
         <argument name = "size" type="size"/>
     </method>
 
+    <method name ="remote_reconnect">
+    Reconnect to subscribed views
+    </method>
 
 
     <method name = "to_metadata_json_string">

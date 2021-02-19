@@ -136,6 +136,10 @@ APPLICATION_NETWORK_EXPORT void
 APPLICATION_NETWORK_EXPORT void
     appnet_application_remote_trigger_action_data (appnet_application_t *self, const char *action_name, void *data, size_t size);
 
+//  Reconnect to subscribed views
+APPLICATION_NETWORK_EXPORT void
+    appnet_application_remote_reconnect (appnet_application_t *self);
+
 //  get application meta data a string-json
 //  Caller owns return value and must destroy it when done.
 APPLICATION_NETWORK_EXPORT char *

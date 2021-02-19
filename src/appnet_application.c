@@ -444,15 +444,14 @@ void
         return;
     }
     
-    // check if view is already subscribed
-    const char* check = (const char*)zhash_lookup(self->views,view_name);
-    if (streq(check,"true")){
-        fprintf(stderr,"view[%s] already subscribed!\n",view_name);
-        return;
-    }
+    // // check if view is already subscribed
+    //const char* check = (const char*)zhash_lookup(self->views,view_name);
+    // if (streq(check,"true")){
+    //     fprintf(stderr,"view[%s] already subscribed!\n",view_name);
+    //     return;
+    // }
     zhash_delete(self->views,view_name);
     zhash_insert(self->views,view_name,"true");
-    check = (const char*)zhash_lookup(self->views,view_name);
 
     zmsg_t* msg = appnet_msg_create_generic_string_list_message(APPNET_MSG_SUBSCRIBE_VIEW,1,view_name);
     whisper_to_app(self,msg);
@@ -543,6 +542,24 @@ void
     whisper_to_app(self,msg);
 }
 
+//  Reconnect to subscribed views
+void appnet_application_remote_reconnect (appnet_application_t *self)
+{
+    assert(self);
+    zlist_t* vkeys = zhash_keys(self->views);
+
+    // iterate over views-hash and find the subscribed view(value=="true") and subscribe again
+    for (const char* val=zhash_first(self->views);val!=NULL;val=zhash_next(self->views)){
+        if (streq(val,"true")){
+            const char* view_name = zhash_cursor(self->views);
+            appnet_application_remote_subscribe_view(self,view_name);
+        }
+    }
+
+    // for (const char* key = zlist_first(vkeys); key!=NULL; key=zhash_next(vkeys)){
+        
+    // }
+}
 
 
 //  --------------------------------------------------------------------------

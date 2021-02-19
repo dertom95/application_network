@@ -10,7 +10,7 @@
 (x) - app/client: unsubscribe all
 ( ) - when client leaves remove from view-subscribers
 ( ) - if client reconnect resubscribe...
-( ) - make reconnect possible(resubscribe to former views again)
+(O) - make reconnect possible(resubscribe to former views again)
 (x) - app/client: enter/leave group on subscription
 
 

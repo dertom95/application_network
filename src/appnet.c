@@ -346,7 +346,16 @@ uint8_t appnet_receive_event_enter (appnet_t *self, zyre_event_t *evt)
         }
 
         const char *app_peer_id = appnet_application_get_peer_id (remote_app);
-        zhash_insert (self->peers.applications, app_peer_id, remote_app);
+        
+        // only add peer to applications-hash if not already present
+        appnet_application_t* check_remote = zhash_lookup (self->peers.applications, app_peer_id);
+        if (!check_remote){
+            // no node with this peer address exists already
+            zhash_insert (self->peers.applications, app_peer_id, remote_app);
+        } else {
+            // we already have a peer with this peer_id. try to reconnect to views(if any)
+            appnet_application_remote_reconnect(check_remote);
+        }
         return APPNET_TYPE_APPLICATION_ENTER;
     } else if (is_client) {
         appnet_client_t *remote_client = appnet_client_new_from_zyre (evt);
